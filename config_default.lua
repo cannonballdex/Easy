@@ -42,9 +42,11 @@ _C.FORAGE_KEEP = {
 _C.MOD_RODS_TO_DESTROY = {
     "Wand of Pelagic Transvergence",
     "Wand of Phantasmal Transvergence",
+    "Summoned: Giant Modulation Shard",
     "Summoned: Large Modulation Shard",
     "Summoned: Dazzling Modulation Shard",
     "Summoned: Radiant Modulation Shard",
+    "Summoned: Glowing Modulation Shard",
     "Rod of Prime Transvergence",
     "Rod of Mystical Transvergence",
     "Rod of Ethereal Transvergence",
@@ -54,9 +56,11 @@ _C.MOD_RODS_TO_DESTROY = {
 _C.MOD_RODS_TO_INVENTORY = {
     "Wand of Pelagic Transvergence",
     "Wand of Phantasmal Transvergence",
+    "Summoned: Giant Modulation Shard",
     "Summoned: Large Modulation Shard",
     "Summoned: Dazzling Modulation Shard",
     "Summoned: Radiant Modulation Shard",
+    "Summoned: Glowing Modulation Shard",
     "Rod of Prime Transvergence",
     "Rod of Mystical Transvergence",
     "Rod of Ethereal Transvergence",
