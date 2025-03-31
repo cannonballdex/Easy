@@ -27,9 +27,11 @@ local SETTINGS_FILE = ''
 local SETTINGS_PATH = ''
 local LOOT_FILE = ''
 local LOOT_CONFIG_CHECK = ''
-local Version = 'BETA v5.5'
+local Version = 'BETA v10.0'
 local current_plat = 0
 local Macro = ''
+mq.cmdf('/%s pause on', mq.TLO.CWTN.Command())
+print('\arWarning: \ayThis script does not run with CWTN plugin, CWTN has been paused')
 local function save_settings()
     LIP.save(SETTINGS_PATH, SETTINGS)
 end
@@ -126,15 +128,15 @@ local DefaultSets = {
 }
     local CHAR_CONFIG = 'Char_' .. mq.TLO.EverQuest.Server() .. '_' .. mq.TLO.Me.CleanName() .. '_Config'
 
-    CONFIG_DIR = mq.TLO.MacroQuest.Path() .. "\\lua\\EasyLua\\"
-    SETTINGS_FILE = 'EasyLua.ini'
+    CONFIG_DIR = mq.TLO.MacroQuest.Path() .. "\\lua\\Easy\\"
+    SETTINGS_FILE = 'Easy.ini'
     SETTINGS_PATH = CONFIG_DIR..SETTINGS_FILE
     LOOT_FILE = 'config.lua'
     LOOT_CONFIG_CHECK = CONFIG_DIR..LOOT_FILE
     if loot_file_exists(LOOT_CONFIG_CHECK) then
-        LOOT_CONFIG = require('EasyLua.config')
+        LOOT_CONFIG = require('Easy.config')
     else
-        LOOT_CONFIG = require('EasyLua.config_default')
+        LOOT_CONFIG = require('Easy.config_default')
     end
     local LOOT_CONFIG = LOOT_CONFIG
     if file_exists(SETTINGS_PATH) then
@@ -214,6 +216,7 @@ local DefaultSets = {
         summon_brew = SETTINGS[CHAR_CONFIG]['summon_brew'],
         summon_cookies = SETTINGS[CHAR_CONFIG]['summon_cookies'],
         summon_milk = SETTINGS[CHAR_CONFIG]['summon_milk'],
+        summon_picnic = SETTINGS[CHAR_CONFIG]['summon_picnic'],
         summon_tea = SETTINGS[CHAR_CONFIG]['summon_tea'],
         summon_bread = SETTINGS[CHAR_CONFIG]['summon_bread'],
 		summon_water = SETTINGS[CHAR_CONFIG]['summon_water'],
@@ -233,6 +236,12 @@ local DefaultSets = {
         COOKIES_TO_SUMMON = 20,
         SPICED_TEA_TO_SUMMON = 20,
         WARM_MILK_TO_SUMMON = 20,
+        ELVEN_WINE_TO_SUMMON = 20,
+        AFTERNOON_TEA_TO_SUMMON = 20,
+        REFRESHING_MILK_TO_SUMMON = 20,
+        JUMJUM_CAKE_TO_SUMMON = 20,
+        PLUMP_SYLVAN_BERRIES_TO_SUMMON = 20,
+        SPICY_WOLF_SANDWICH_TO_SUMMON = 20,
         BRELL_ALE_TO_SUMMON = 20,
         ALE_TO_SUMMON = 20,
         COOKED_TURKEY_TO_SUMMON = 20,
@@ -246,7 +255,7 @@ local DefaultSets = {
         START_BURN = 98,
         STOP_BURN = 2,
         PARCEL_ZONES = {
-            751, 737, 738, 345
+            751, 737, 738, 345, 712
         }
     }
 --Force Feed
@@ -543,10 +552,10 @@ local Invis_IVU_Status = "NO"
 local Root_Status = "NO"
 local Snare_Status = "NO"
 local Levitate_Status = "NO"
-local expansion_owned = "Pre-TOV"
+local expansion_owned = "Pre-TOL"
 local timeDisplayNorrath = string.format("%02d:%02d", mq.TLO.GameTime.Hour(), mq.TLO.GameTime.Minute())
 local timeDisplayEarth = os.date("%H:%M:%S")
-local peerCountDanNet = ''
+local peerCountDanNet
 local zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
 
 if mq.TLO.Plugin('mq2dannet')() == nil and saved_settings.dannet_load then
@@ -609,7 +618,7 @@ local onzones = {
    763, 764, 765, 768, 769, 770, 771, 772, 773, 774, 775, 777, 778, 779, 780, 781, 782, 783, 784, 785, 787, 788, 789, 790, 791, 792, 793,
    794, 795, 798, 800, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824, 825, 826, 827, 828, 829, 830, 831, 832, 833, 834, 835,
    836, 837, 838, 839, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 860, 861, 862,
-   863, 864, 865, 904, 996, 997, 998
+   863, 864, 865, 869, 870, 871, 872, 873, 874, 875, 974, 975, 904, 996, 997, 998
   }
 
 -------------------------------------------------
@@ -648,16 +657,16 @@ local function GrabGlobes()
             if shinydist and shinydist <= 20 then
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 mq.TLO.Ground.Search("glowing").Grab()
                 mq.delay(500)
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agInventory Cursor \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                     if mq.TLO.Cursor.ID() ~= nil then
                         print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.autoinventory()
+                        mq.cmd('/autoinv')
                     end
                 end
             end
@@ -701,12 +710,12 @@ local function PowerSource()
         end
         print(easy, ' \ayUnCheck or Equip a Power Source to use one.')
         mq.delay('1s')
-        mq.cmd.autoinventory()
+        mq.cmd('/autoinv')
     end
     if mq.TLO.FindItem(MySource).Power() == 0 and mq.TLO.FindItem(MySource)() ~= nil then
         mq.cmd('/ctrl /itemnotify powersource leftmouseup')
         if mq.TLO.FindItem(MySource).Power() == 0 and mq.TLO.Cursor.Name() == MySource and mq.TLO.Cursor.Name() ~= nil then
-            mq.cmd.destroy()
+            mq.cmd('/destroy')
             print(easy, ' \arDestroyed:\ap Spent Power Source.')
             mq.delay(10)
         end
@@ -803,28 +812,28 @@ local function Forage()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
-        mq.cmd.doability('Forage')
+        mq.cmd('/doability forage')
         mq.delay('1s')
         ::RecheckForaged::
             for _, item in pairs(FORAGE_DESTROY) do
                 if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                     print(easy, ' \ag Forage \arDestroyed: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.destroy()
+                    mq.cmd('/destroy')
                     mq.delay(500)
                 end
             end
             for _, item in pairs(FORAGE_KEEP) do
                 if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                     print(easy, ' \ag Forage \agKeep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                     mq.delay(500)
                 end
             end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \ag Forage \agKeep:\ay(Not Defined) \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             mq.delay('1s')
             goto RecheckForaged
         end
@@ -937,7 +946,7 @@ local CheckCauldron = function ()
                     mq.delay('2s')
                     if mq.TLO.Cursor.ID() ~= nil then
                         print(easy, ' \agInventory Cursor \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.autoinventory()
+                        mq.cmd('/autoinv')
                     end
                 break
                 end
@@ -954,42 +963,42 @@ local CheckCauldron = function ()
                     end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 mq.cmdf("/useitem %s", v)
                 mq.delay('11s')
                 for _, item in pairs(CAULDRON_TO_KEEP) do
                     if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                         print(easy, ' \agCauldron Keep: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.autoinventory()
+                        mq.cmd('/autoinv')
                         mq.delay('1s')
                     end
                     if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                         print(easy, ' \agCauldron Keep: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.autoinventory()
+                        mq.cmd('/autoinv')
                         mq.delay(500)
                     end
                 end
                 for _, item in pairs(CAULDRON_TO_DESTROY) do
                     if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                         print(easy, ' \arCauldron Destroyed: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.destroy()
+                        mq.cmd('/destroy')
                         mq.delay('1s')
                     end
                     if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == item then
                         print(easy, ' \arCauldron Destroyed: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.destroy()
+                        mq.cmd('/destroy')
                         mq.delay(500)
                     end
                 end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCauldron \agKeep:\ay(Not Defined) \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                     mq.delay('1s')
                 end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCauldron \agKeep:\ay(Not Defined) \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                     mq.delay(500)
                 end
             end
@@ -1007,11 +1016,11 @@ local function DestroyModRod()
             end
         if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == mod_destroy then
             print(easy, ' \arMod Rod Destroyed: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.destroy()
+            mq.cmd('/destroy')
             mq.delay(500)
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agClearing Cursor: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1035,16 +1044,16 @@ local function WeeHarvester()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Wee\'er Harvester')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agWee\'er Harvester Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1060,16 +1069,16 @@ local function BiggerBelt()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Bigger Belt of the River')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agBigger Belt of the River Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1085,16 +1094,16 @@ local function CookieDispenser()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Fresh Cookie Dispenser')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agFresh Cookie Dispenser Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1110,16 +1119,16 @@ local function TeaDispenser()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Spiced Iced Tea Dispenser')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agSpiced Iced Tea Dispenser Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1135,16 +1144,48 @@ local function MilkDispenser()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Warm Milk Dispenser')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agWarm Milk Dispenser Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
+            end
+        end
+    end
+end
+
+-------------------------------------------------
+---------------- Packed Picnic Basket -----------
+-------------------------------------------------
+local function PicnicDispenser()
+    if mq.TLO.FindItem('Packed Picnic Basket')() and
+        (mq.TLO.FindItemCount('61994')() < defaults.ELVEN_WINE_TO_SUMMON
+            or mq.TLO.FindItemCount('61993')() < defaults.AFTERNOON_TEA_TO_SUMMON
+                or mq.TLO.FindItemCount('61992')() < defaults.REFRESHING_MILK_TO_SUMMON
+                    or mq.TLO.FindItemCount('61997')() < defaults.JUMJUM_CAKE_TO_SUMMON
+                        or mq.TLO.FindItemCount('61996')() < defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON
+                            or mq.TLO.FindItemCount('61995')() < defaults.SPICY_WOLF_SANDWICH_TO_SUMMON)
+                                and mq.TLO.FindItem('=Packed Picnic Basket').TimerReady() == 0 and mq.TLO.Me.FreeInventory() >= 5 and not mq.TLO.Me.Combat() and not mq.TLO.Me.Invis() and not mq.TLO.Me.Sitting() and Checked() and not mq.TLO.Me.Moving() and (mq.TLO.Zone.ID() ~= 344 and mq.TLO.Zone.ID() ~= 202 or saved_settings.edibles_pok_gl) then
+        if mq.TLO.Me.FreeInventory() <= 7 then
+            print(easy, ' \agPicnic Dispenser: \arYou are just about out of room to summon picnic')
+        end
+        if mq.TLO.Cursor.ID() ~= nil then
+            print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
+            mq.cmd('/autoinv')
+        end
+        mq.cmdf("/useitem %s", 'Packed Picnic Basket')
+        mq.delay('1s')
+        if mq.TLO.Cursor.ID() ~= nil then
+            print(easy, ' \agPacked Picnic Basket Keep: \ap '..mq.TLO.Cursor.Name())
+            mq.cmd('/autoinv')
+            if mq.TLO.Cursor.ID() ~= nil then
+                print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1160,16 +1201,16 @@ local function BrewDispenser()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Brell\'s Brew Dispenser')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agBrell\'s Brew Dispenser Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1184,7 +1225,7 @@ local function BrellsFishingPole()
         mq.delay('10s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
     end
     if mq.TLO.FindItem('Brell\'s Fishin\' Pole')() and mq.TLO.FindItemCount('8991')() < defaults.ALE_TO_SUMMON and mq.TLO.FindItem('=Brell\'s Fishin\' Pole').TimerReady() == 0 and mq.TLO.Me.FreeInventory() >= 5 and not mq.TLO.Me.Combat() and not mq.TLO.Me.Invis() and not mq.TLO.Me.Sitting() and Checked() and not mq.TLO.Me.Moving() and (mq.TLO.Zone.ID() ~= 344 and mq.TLO.Zone.ID() ~= 202 or saved_settings.edibles_pok_gl) then
@@ -1193,16 +1234,16 @@ local function BrellsFishingPole()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Brell\'s Fishin\' Pole')
         mq.delay('3s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agBrell\'s Fishin\' Pole Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1218,16 +1259,16 @@ local function TurkeyDispenser()
         end
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
         mq.cmdf("/useitem %s", 'Endless Turkeys')
         mq.delay('1s')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agEndless Turkey Keep: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
         end
     end
@@ -1242,7 +1283,7 @@ local function ForceFeed()
             if mq.TLO.FindItem('=' .. v)() and mq.TLO.Me.Hunger() <= defaults.EAT_LEVEL then
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 print(easy, ' \agForce Feed: \ap '..v)
                 mq.cmdf('/useitem "%s"', v)
@@ -1260,7 +1301,7 @@ local function ForceDrink()
             if mq.TLO.FindItem('=' .. j)() and mq.TLO.Me.Thirst() <= defaults.DRINK_LEVEL then
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 print(easy, ' \agForce Drink: \ap '..j)
                 mq.cmdf('/useitem "%s"', j)
@@ -1278,7 +1319,7 @@ local function GetDrunk()
             if mq.TLO.FindItem('=' .. k)() and mq.TLO.Me.Drunk() <= defaults.GET_DRUNK_LEVEL then
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 print(easy, ' \agGet Drunk: \ap '..k)
                 mq.cmdf('/useitem "%s"', k)
@@ -1295,10 +1336,10 @@ local function ClearModRods()
         if mq.TLO.Cursor.ID() ~= nil and mq.TLO.Cursor.Name() == mod_keep then
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \agMod Rod Keep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
             end
         end
@@ -1311,10 +1352,10 @@ end
 local function ClearCursor()
     if mq.TLO.Cursor.ID() ~= nil then
         print(easy, ' \agClearing Cursor \ap '..mq.TLO.Cursor.Name())
-        mq.cmd.autoinventory()
+        mq.cmd('/autoinv')
         if mq.TLO.Cursor.ID() ~= nil then
             print(easy, ' \agClearing Cursor: \ap '..mq.TLO.Cursor.Name())
-            mq.cmd.autoinventory()
+            mq.cmd('/autoinv')
         end
     end
 end
@@ -1391,6 +1432,24 @@ local function CheckParcel()
                 end
             end
         else
+            if mq.TLO.Zone.ID() == 712 then
+            mq.cmd('/nav spawn Postmaster')
+            while mq.TLO.Me.Moving() do
+                mq.delay(10)
+            end
+            mq.delay('2s')
+            mq.cmd('/target Postmaster')
+            mq.delay('3s')
+            mq.cmd('/usetarget')
+            mq.delay('3s')
+            mq.cmd('/notify MerchantWnd MW_Retrieve_All_Button leftmouseup')
+            while (mq.TLO.Window('PlayerWindow/PW_ParcelsIcon')() == 'TRUE') and mq.TLO.Window('MerchantWnd')() or mq.TLO.Window('PlayerWindow/PW_ParcelsOverLimitIcon')() == 'TRUE' and mq.TLO.Window('MerchantWnd')() do
+                if (mq.TLO.Window('PlayerWnd/PW_ParcelsIcon')() == 'TRUE') then
+                    mq.cmd('/notify MerchantWnd MW_Retrieve_All_Button leftmouseup')
+                    mq.delay('5s')
+                end
+            end
+        else
             mq.cmd('/nav spawn parcel')
             while mq.TLO.Me.Moving() do
                 mq.delay(10)
@@ -1408,6 +1467,7 @@ local function CheckParcel()
                 end
             end
         end
+    end
             mq.cmd('/windowstate MerchantWnd close')
         end
     end
@@ -1466,25 +1526,30 @@ end
 -------------------------------------------------
 ---------------- Toon Assist --------------------
 -------------------------------------------------
-local function ToonAssist()
-    if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+local ToonAssist = function()
+zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+
+if mq.TLO.Plugin('mq2dannet')() ~= nil then
+---@diagnostic disable-next-line: redundant-parameter
     local peercount = mq.TLO.DanNet.PeerCount('melee')()
     local targetHP = mq.TLO.Target.PctHPs() or 0
     local tank = mq.TLO.Me.CleanName()
     local mob_id = mq.TLO.Target.ID()
-    if peercount > 0 and targetHP <= defaults.TOON_ASSIST_PCT_ON and targetHP >= defaults.TOON_ASSIST_PCT_OFF and not mq.TLO.Me.Moving() and mq.TLO.Target.Distance() <= defaults.TOON_ASSIST_TARGET_DIST and not mq.TLO.Me.Hovering() and mq.TLO.Target.Aggressive() == true and not mq.TLO.Me.Hovering() and mq.TLO.Target.ID() ~= 0 and mq.TLO.Me.XTarget() >= 1 then
+    local zonePeerAssist = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+    if peercount > 1 and targetHP <= 97 and targetHP >= 90 and not mq.TLO.Me.Moving() and mq.TLO.Target.Distance() <= 25 and not mq.TLO.Me.Hovering() and mq.TLO.Target.Aggressive() == true and not mq.TLO.Me.Hovering() and mq.TLO.Target.ID() ~= 0 and mq.TLO.Me.XTarget() >= 1 then
         print(easy, ' \ar Calling \aw- \aoToon Assist.')
-            mq.cmdf('/noparse /dge melee /nav id %s', mob_id)
+            mq.cmdf('/noparse /dge '..zonePeerCount..' /nav id %s', mob_id)
             mq.delay(250)
-            mq.cmdf('/noparse /dge tank /nav id %s', mob_id)
+            --mq.cmdf('/noparse /dge tank /nav id %s', mob_id)
+            --mq.delay(250)
+            mq.cmdf('/noparse /dge '..zonePeerCount..' /assist %s', tank)
             mq.delay(250)
-            mq.cmdf('/noparse /dge melee /assist %s', tank)
+            --mq.cmdf('/noparse /dge tank /assist %s', tank)
+            --mq.delay(250)
+            mq.cmd('/noparse /dge '..zonePeerCount..' /attack on')
             mq.delay(250)
-            mq.cmdf('/noparse /dge tank /assist %s', tank)
-            mq.delay(250)
-            mq.cmd('/noparse /dge melee /attack on')
-            mq.delay(250)
-            mq.cmd('/noparse /dge tank /attack on')
+            mq.cmd('/noparse /dge priest /attack off')
+            mq.cmd('/noparse /dge caster /attack off')
             mq.delay(10)
         end
     end
@@ -1846,7 +1911,7 @@ local PAL_BURN = function ()
         
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and pal_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and pal_burn_variables.xtarget == 0 and not pal_burn_variables.combat_true and not pal_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and pal_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and pal_burn_variables.xtarget == 0 and not pal_burn_variables.combat_true and not pal_burn_variables.hovering then
             print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -1889,7 +1954,7 @@ local PAL_BURN = function ()
             --Combat Abilities
             --Unending Affirmation
             local unendingaffirmation = mq.TLO.Spell('Unending Affirmation').RankName()
-            if mq.TLO.Me.CombatAbilityReady(unendingaffirmation)() and pal_burn_variables.maintank == mq.TLO.Me.CleanName() then
+            if mq.TLO.Me.CombatAbilityReady('Unending Affirmation')() and pal_burn_variables.maintank == mq.TLO.Me.CleanName() then
                 print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..unendingaffirmation..'')
                 mq.cmdf('/disc %s', unendingaffirmation)
                 mq.delay(490)
@@ -1899,7 +1964,7 @@ local PAL_BURN = function ()
             end
             --Mantle of the Sapphire
             local mantleofthesapphire = mq.TLO.Spell('Mantle of the Sapphire').RankName()
-            if mq.TLO.Me.CombatAbilityReady(mantleofthesapphire)() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
+            if mq.TLO.Me.CombatAbilityReady('Mantle of the Sapphire')() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
                 print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..mantleofthesapphire..'')
                 mq.cmdf('/disc %s', mantleofthesapphire)
                 mq.delay(490)
@@ -1909,7 +1974,7 @@ local PAL_BURN = function ()
             end
             --Thwart
             local thwart = mq.TLO.Spell('Thwart').RankName()
-            if mq.TLO.Me.CombatAbilityReady(thwart)() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
+            if mq.TLO.Me.CombatAbilityReady('Thwart')() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
                 print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..thwart..'')
                 mq.cmdf('/disc %s', thwart)
                 mq.delay(490)
@@ -1919,7 +1984,7 @@ local PAL_BURN = function ()
             end
             --Armor of Sincerity
             local armorofsincerity = mq.TLO.Spell('Armor of Sincerity').RankName()
-            if mq.TLO.Me.CombatAbilityReady(armorofsincerity)() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
+            if mq.TLO.Me.CombatAbilityReady('Armor of Sincerity')() and pal_burn_variables.myhp <= 40 and pal_burn_variables.myhp >= 1 then
                 print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..armorofsincerity..'')
                 mq.cmdf('/disc %s', armorofsincerity)
                 mq.delay(490)
@@ -1929,7 +1994,7 @@ local PAL_BURN = function ()
             end
             --Righteous Antipathy
             local righteousantipathy = mq.TLO.Spell('Righteous Antipathy').RankName()
-            if mq.TLO.Me.CombatAbilityReady(righteousantipathy)() and pal_burn_variables.targethp >= 70 and pal_burn_variables.myhp <= 99 then
+            if mq.TLO.Me.CombatAbilityReady('Righteous Antipathy')() and pal_burn_variables.targethp >= 70 and pal_burn_variables.myhp <= 99 then
                 print(easy, ' \ag PAL Burn\aw - \ag[\atCombat Ability\ag]\ao - '..righteousantipathy..'')
                 mq.cmdf('/disc %s', righteousantipathy)
                 mq.delay(490)
@@ -2509,7 +2574,7 @@ local RNG_BURN = function ()
         end
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and rng_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and rng_burn_variables.xtarget == 0 and not rng_burn_variables.combat_true and not rng_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and rng_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and rng_burn_variables.xtarget == 0 and not rng_burn_variables.combat_true and not rng_burn_variables.hovering then
             print(easy, ' \ag RNG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -2888,7 +2953,7 @@ local DRU_BURN = function ()
         end
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and dru_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and dru_burn_variables.xtarget == 0 and not dru_burn_variables.combat_true and not dru_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and dru_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and dru_burn_variables.xtarget == 0 and not dru_burn_variables.combat_true and not dru_burn_variables.hovering then
             print(easy, ' \agDRU Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -3003,16 +3068,16 @@ local WAR_BURN = function ()
                 end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 mq.cmdf("/useitem %s", 'Huntsman\'s Ethereal Quiver')
                 mq.delay('1s')
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \agHuntsman\'s Ethereal Quiver Keep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                     if mq.TLO.Cursor.ID() ~= nil then
                         print(easy, ' \agCursor Keep: \ap '..mq.TLO.Cursor.Name())
-                        mq.cmd.autoinventory()
+                        mq.cmd('/autoinv')
                     end
                 end
             end
@@ -3022,42 +3087,42 @@ local WAR_BURN = function ()
             end
             --Field Bulwark
             local field_bulwark = mq.TLO.Spell('Field Bulwark').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(field_bulwark)() and mq.TLO.Me.Song("Field Bulwark")() == nil and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Field Bulwark')() and mq.TLO.Me.Song("Field Bulwark")() == nil and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..field_bulwark..'')
                 mq.cmdf('/disc %s', field_bulwark)
                 mq.delay(490)
             end
             --Vigorous Defense
             local vigorous_defense = mq.TLO.Spell('Vigorous Defense').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(vigorous_defense)() and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Vigorous Defense')() and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..vigorous_defense..'')
                 mq.cmdf('/disc %s', vigorous_defense)
                 mq.delay(490)
             end
             --Primal Defense
             local primal_defense = mq.TLO.Spell('Primal Defense').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(primal_defense)() and not mq.TLO.Me.CombatAbilityReady(vigorous_defense)() and mq.TLO.Me.Song("Primal Defense")() == nil and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Primal Defense')() and not mq.TLO.Me.CombatAbilityReady('Vigorous Defense')() and mq.TLO.Me.Song("Primal Defense")() == nil and mq.TLO.Me.Song("Vigorous Defense")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..primal_defense..'')
                 mq.cmdf('/disc %s', primal_defense)
                 mq.delay(490)
             end
             --Full Moon's Champion
             local full_moons_champion = mq.TLO.Spell('Full Moon\'s Champion').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(full_moons_champion)() and mq.TLO.Me.Song("Full Moon\'s Champion")() == nil and mq.TLO.Me.Song("Field Bulwark")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Full Moon\'s Champion')() and mq.TLO.Me.Song("Full Moon\'s Champion")() == nil and mq.TLO.Me.Song("Field Bulwark")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..full_moons_champion..'')
                 mq.cmdf('/disc %s', full_moons_champion)
                 mq.delay(490)
             end
             --Champion's Aura
             local champions_aura = mq.TLO.Spell('Champion\'s Aura').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(champions_aura)() and mq.TLO.Me.Aura('Champion\'s Aura')() == nil and war_burn_variables.myendurance >= 10 and not war_burn_variables.hovering and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Champion\'s Aura')() and mq.TLO.Me.Aura('Champion\'s Aura')() == nil and war_burn_variables.myendurance >= 10 and not war_burn_variables.hovering and not mq.TLO.Me.Moving() and mq.TLO.Me.Standing() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..champions_aura..'')
                 mq.cmdf('/disc %s', champions_aura)
                 mq.delay(490)
             end
             --Breather
             local breather = mq.TLO.Spell('Breather').RankName()
-            if mq.TLO.Me.CombatAbilityReady(breather)() and war_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and war_burn_variables.xtarget == 0 and not war_burn_variables.hovering then
+            if mq.TLO.Me.CombatAbilityReady('Breather')() and war_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and war_burn_variables.xtarget == 0 and not war_burn_variables.hovering then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
                 mq.cmdf('/disc %s', breather)
                 mq.delay(5000)
@@ -3065,7 +3130,7 @@ local WAR_BURN = function ()
             if WarBurn() then
                 --Commanding Voice
                 local commanding_voice = mq.TLO.Spell('Commanding Voice').RankName()
-            if mq.TLO.Me.CombatAbilityReady(commanding_voice)() and mq.TLO.Me.Song("Commanding Voice")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 then
+            if mq.TLO.Me.CombatAbilityReady('Commanding Voice')() and mq.TLO.Me.Song("Commanding Voice")() == nil and not war_burn_variables.hovering and war_burn_variables.myendurance >= 10 then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..commanding_voice..'')
                 mq.cmdf('/disc %s', commanding_voice)
                 mq.delay(490)
@@ -3111,7 +3176,7 @@ local WAR_BURN = function ()
             end
             --Throat Jab
             local throat_jab = mq.TLO.Spell('Throat Jab').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(throat_jab)() and mq.TLO.Target.Buff('Throat Jab')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Throat Jab')() and mq.TLO.Target.Buff('Throat Jab')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..throat_jab..'')
                 mq.cmdf('/disc %s',throat_jab)
                 mq.delay(490)
@@ -3121,7 +3186,7 @@ local WAR_BURN = function ()
             end
             --Bracing Stance
             local shield_rupture = mq.TLO.Spell('Shield Rupture').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(shield_rupture)() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Shield Rupture')() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..shield_rupture..'')
                 mq.cmdf('/disc %s',shield_rupture)
                 mq.delay(490)
@@ -3131,7 +3196,7 @@ local WAR_BURN = function ()
             end
             --Mortimus' Roar
             local mortimus_roar = mq.TLO.Spell('Mortimus\' Roar').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(mortimus_roar)() and mq.TLO.Target.Buff('Mortimus\' Roar')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Mortimus\' Roar')() and mq.TLO.Target.Buff('Mortimus\' Roar')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..mortimus_roar..'')
                 mq.cmdf('/disc %s',mortimus_roar)
                 mq.delay(490)
@@ -3141,7 +3206,7 @@ local WAR_BURN = function ()
             end
             --Namdrows' Roar
             local namdrows_roar = mq.TLO.Spell('Namdrows\' Roar').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(namdrows_roar)() and mq.TLO.Target.Buff('Namdrows\' Roar')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Namdrows\' Roar')() and mq.TLO.Target.Buff('Namdrows\' Roar')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..namdrows_roar..'')
                 mq.cmdf('/disc %s',namdrows_roar)
                 mq.delay(490)
@@ -3151,7 +3216,7 @@ local WAR_BURN = function ()
             end
             --Bristle Recourse
             local bristle = mq.TLO.Spell('Bristle').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(bristle)() and mq.TLO.Me.Song('Bristle Recourse')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Bristle')() and mq.TLO.Me.Song('Bristle Recourse')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..bristle..'')
                 mq.cmdf('/disc %s',bristle)
                 mq.delay(490)
@@ -3161,7 +3226,7 @@ local WAR_BURN = function ()
             end
             --Phantom Aggressor
             local phantom_aggressor = mq.TLO.Spell('Phantom Aggressor').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(phantom_aggressor)() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Phantom Aggressor')() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..phantom_aggressor..'')
                 mq.cmdf('/disc %s',phantom_aggressor)
                 mq.delay(490)
@@ -3171,7 +3236,7 @@ local WAR_BURN = function ()
             end
             --Roar of Challenge
             local roar_of_challenge = mq.TLO.Spell('Roar of Challenge').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(roar_of_challenge)() and war_burn_variables.xtarget >= 3 then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Roar of Challenge')() and war_burn_variables.xtarget >= 3 then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..roar_of_challenge..'')
                 mq.cmdf('/disc %s',roar_of_challenge)
                 mq.delay(490)
@@ -3181,7 +3246,7 @@ local WAR_BURN = function ()
             end
             --Ecliptic Shield
             local ecliptic_shield = mq.TLO.Spell('Ecliptic Shield').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(ecliptic_shield)() and mq.TLO.Me.Buff('Ecliptic Shielding')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Ecliptic Shield')() and mq.TLO.Me.Buff('Ecliptic Shielding')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ecliptic_shield..'')
                 mq.cmdf('/disc %s',65000)
                 mq.delay(490)
@@ -3191,7 +3256,7 @@ local WAR_BURN = function ()
             end
             --Wade into Conflict Effect
             local wade_into_conflict = mq.TLO.Spell('Wade into Conflict').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(wade_into_conflict)() and mq.TLO.Me.Buff('Wade into Conflict Effect')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Wade into Conflict')() and mq.TLO.Me.Buff('Wade into Conflict Effect')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..wade_into_conflict..'')
                 mq.cmdf('/disc %s',wade_into_conflict)
                 mq.delay(490)
@@ -3201,7 +3266,7 @@ local WAR_BURN = function ()
             end
             --Levincrash Defense Discipline
             local levincrash_defense_discipline = mq.TLO.Spell('Levincrash Defense Discipline').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(levincrash_defense_discipline)() and war_burn_variables.myhp <= 75 and war_burn_variables.myhp >= 1 then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Levincrash Defense Discipline')() and war_burn_variables.myhp <= 75 and war_burn_variables.myhp >= 1 then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..levincrash_defense_discipline..'')
                 mq.cmdf('/disc %s', levincrash_defense_discipline)
                 mq.delay(490)
@@ -3211,7 +3276,7 @@ local WAR_BURN = function ()
             end
             --Unconditional Attention
             local unconditional_attention = mq.TLO.Spell('Unconditional Attention').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(unconditional_attention)() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Unconditional Attention')() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..unconditional_attention..'')
                 mq.cmdf('/disc %s', unconditional_attention)
                 mq.delay(490)
@@ -3221,7 +3286,7 @@ local WAR_BURN = function ()
             end
             --Perforate
             local perforate = mq.TLO.Spell('Perforate').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(perforate)() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Perforate')() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..perforate..'')
                 mq.cmdf('/disc %s', perforate)
                 mq.delay(490)
@@ -3231,7 +3296,7 @@ local WAR_BURN = function ()
             end
             --Penumbral Precision Effect
             local penumbral_precision = mq.TLO.Spell('Penumbral Precision').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(penumbral_precision)() and war_burn_variables.targethp >= 50 and war_burn_variables.targethp <= 75 and mq.TLO.Me.Buff('Penumbral Expanse Effect')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Penumbral Precision')() and war_burn_variables.targethp >= 50 and war_burn_variables.targethp <= 75 and mq.TLO.Me.Buff('Penumbral Expanse Effect')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..penumbral_precision..'')
                 mq.cmdf('/disc %s',penumbral_precision)
                 mq.delay(490)
@@ -3248,7 +3313,7 @@ local WAR_BURN = function ()
             end
             --Knuckle Break
             local knuckle_break = mq.TLO.Spell('Knuckle Break').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(knuckle_break)() then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Knuckle Break')() then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..knuckle_break..'')
                 mq.cmdf('/disc %s',knuckle_break)
                 mq.delay(490)
@@ -3258,7 +3323,7 @@ local WAR_BURN = function ()
             end
             --Warrior's Resolve
             local warriors_resolve = mq.TLO.Spell('Warrior\'s Resolve').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(warriors_resolve)() and mq.TLO.Me.Buff('Warrior\'s Resolve')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Warrior\'s Resolve')() and mq.TLO.Me.Buff('Warrior\'s Resolve')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..warriors_resolve..'')
                 mq.cmdf('/disc %s',warriors_resolve)
                 mq.delay(490)
@@ -3268,7 +3333,7 @@ local WAR_BURN = function ()
             end
             --Warrior's Aegis
             local warriors_aegis = mq.TLO.Spell('Warrior\'s Aegis').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(warriors_aegis)() and mq.TLO.Me.Buff('Warrior\'s Aegis')() == nil and mq.TLO.Me.Buff('Warrior\'s Resolve')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Warrior\'s Aegis')() and mq.TLO.Me.Buff('Warrior\'s Aegis')() == nil and mq.TLO.Me.Buff('Warrior\'s Resolve')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..warriors_aegis..'')
                 mq.cmdf('/disc %s',warriors_aegis)
                 mq.delay(490)
@@ -3278,7 +3343,7 @@ local WAR_BURN = function ()
             end
             --Distressing Shout
             local distressing_shout = mq.TLO.Spell('Distressing Shout').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(distressing_shout)() and mq.TLO.Target.Buff('Distressing Shout Effect')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Distressing Shout')() and mq.TLO.Target.Buff('Distressing Shout Effect')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..distressing_shout..'')
                 mq.cmdf('/disc %s',distressing_shout)
                 mq.delay(490)
@@ -3288,7 +3353,7 @@ local WAR_BURN = function ()
             end
             --Twilight Shout
             local twilight_shout = mq.TLO.Spell('Twilight Shout').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(twilight_shout)() and mq.TLO.Target.Buff('Twilight Shout Effect')() == nil and mq.TLO.Target.Buff('Distressing Shout Effect')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Twilight Shout')() and mq.TLO.Target.Buff('Twilight Shout Effect')() == nil and mq.TLO.Target.Buff('Distressing Shout Effect')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..twilight_shout..'')
                 mq.cmdf('/disc %s',twilight_shout)
                 mq.delay(490)
@@ -3298,7 +3363,7 @@ local WAR_BURN = function ()
             end
             --End of the Line
             local end_of_the_line = mq.TLO.Spell('End of the Line').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(end_of_the_line)() and mq.TLO.Me.Song('End of the Line')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('End of the Line')() and mq.TLO.Me.Song('End of the Line')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..end_of_the_line..'')
                 mq.cmdf('/disc %s',end_of_the_line)
                 mq.delay(490)
@@ -3308,7 +3373,7 @@ local WAR_BURN = function ()
             end
             --Finish the Fight
             local finish_the_fight = mq.TLO.Spell('Finish the Fight').RankName()
-            if WarBurn() and mq.TLO.Me.CombatAbilityReady(finish_the_fight)() and mq.TLO.Me.Song('Finish the Fight')() == nil and mq.TLO.Me.Song('End of the Line')() == nil then
+            if WarBurn() and mq.TLO.Me.CombatAbilityReady('Finish the Fight')() and mq.TLO.Me.Song('Finish the Fight')() == nil and mq.TLO.Me.Song('End of the Line')() == nil then
                 print(easy, ' \ag WAR Burn\aw - \ag[\atCombat Ability\ag]\ao - '..finish_the_fight..'')
                 mq.cmdf('/disc %s',finish_the_fight)
                 mq.delay(490)
@@ -3628,7 +3693,7 @@ local BRD_BURN = function ()
             --Combat Abilities
             --Reflexive Rebuttal
             local reflexive_rebuttal = mq.TLO.Spell('Reflexive Rebuttal').RankName()
-            if BrdBurn() and mq.TLO.Me.CombatAbilityReady(reflexive_rebuttal)()and mq.TLO.Me.ActiveDisc() == nil then
+            if BrdBurn() and mq.TLO.Me.CombatAbilityReady('Reflexive Rebuttal')()and mq.TLO.Me.ActiveDisc() == nil then
                 print(easy, ' \ag BRD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..reflexive_rebuttal..'')
                 mq.cmdf('/disc %s', reflexive_rebuttal)
                 mq.delay(490)
@@ -3638,7 +3703,7 @@ local BRD_BURN = function ()
             end
             --Thousand Blades
             local thousand_blades = mq.TLO.Spell('Thousand Blades').RankName()
-            if BrdBurn() and mq.TLO.Me.CombatAbilityReady(thousand_blades)() then
+            if BrdBurn() and mq.TLO.Me.CombatAbilityReady('Thousand Blades')() then
                 mq.cmd('/stopdisc')
                 mq.delay(100)
                 print(easy, ' \ag BRD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..thousand_blades..'')
@@ -3650,7 +3715,7 @@ local BRD_BURN = function ()
             end
             --Deftdance Discipline
             local deftdance_discipline = mq.TLO.Spell('Deftdance Discipline').RankName()
-            if BrdBurn() and mq.TLO.Me.CombatAbilityReady(deftdance_discipline)() and brd_burn_variables.myhp <= 75 and brd_burn_variables.myhp >= 1 then
+            if BrdBurn() and mq.TLO.Me.CombatAbilityReady('Deftdance Discipline')() and brd_burn_variables.myhp <= 75 and brd_burn_variables.myhp >= 1 then
                 mq.cmd('/stopdisc')
                 mq.delay(100)
                 print(easy, ' \ag BRD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..deftdance_discipline..'')
@@ -3662,7 +3727,7 @@ local BRD_BURN = function ()
             end
             --Resistant Discipline
             local resistant_discipline = mq.TLO.Spell('Resistant Discipline').RankName()
-            if BrdBurn() and mq.TLO.Me.CombatAbilityReady(resistant_discipline)() and mq.TLO.Me.ActiveDisc() == nil then
+            if BrdBurn() and mq.TLO.Me.CombatAbilityReady('Resistant Discipline')() and mq.TLO.Me.ActiveDisc() == nil then
                 print(easy, ' \ag BRD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..resistant_discipline..'')
                 mq.cmdf('/disc %s', resistant_discipline)
                 mq.delay(490)
@@ -3672,7 +3737,7 @@ local BRD_BURN = function ()
             end
             --Puretone Discipline
             local puretone_discipline = mq.TLO.Spell('Puretone Discipline').RankName()
-            if BrdBurn() and mq.TLO.Me.CombatAbilityReady(puretone_discipline)() and mq.TLO.Me.ActiveDisc() == nil then
+            if BrdBurn() and mq.TLO.Me.CombatAbilityReady('Puretone Discipline')() and mq.TLO.Me.ActiveDisc() == nil then
                 print(easy, ' \ag BRD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..puretone_discipline..'')
                 mq.cmdf('/disc %s', puretone_discipline)
                 mq.delay(490)
@@ -3924,7 +3989,7 @@ local SHD_BURN = function ()
         
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and shd_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and shd_burn_variables.xtarget == 0 and not shd_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and shd_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and shd_burn_variables.xtarget == 0 and not shd_burn_variables.hovering then
             print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -3994,7 +4059,7 @@ local SHD_BURN = function ()
             --Combat Abilities
             --Reflexive Resentment
             local reflexive_resentment = mq.TLO.Spell('Reflexive Resentment').RankName()
-            if mq.TLO.Me.CombatAbilityReady(reflexive_resentment)() and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Reflexive Resentment')() and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..reflexive_resentment..'')
                 mq.cmdf('/disc %s', reflexive_resentment)
                 mq.delay(490)
@@ -4004,7 +4069,7 @@ local SHD_BURN = function ()
             end
             --Corrupted Guardian
             local corrupted_guardian = mq.TLO.Spell('Corrupted Guardian').RankName()
-            if mq.TLO.Me.CombatAbilityReady(corrupted_guardian)() and mq.TLO.Me.Song('Corrupted Guardian Effect')() == nil and shd_burn_variables.myhp <= 40 and shd_burn_variables.myhp >= 1 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Corrupted Guardian')() and mq.TLO.Me.Song('Corrupted Guardian Effect')() == nil and shd_burn_variables.myhp <= 40 and shd_burn_variables.myhp >= 1 and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..corrupted_guardian..'')
                 mq.cmdf('/disc %s', corrupted_guardian)
                 mq.delay(490)
@@ -4014,7 +4079,7 @@ local SHD_BURN = function ()
             end
             --Repudiate
             local repudiate = mq.TLO.Spell('Repudiate').RankName()
-            if mq.TLO.Me.CombatAbilityReady(repudiate)() and mq.TLO.Me.Buff('Repudiate')() == nil and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Repudiate')() and mq.TLO.Me.Buff('Repudiate')() == nil and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..repudiate..'')
                 mq.cmdf('/disc %s', repudiate)
                 mq.delay(490)
@@ -4024,7 +4089,7 @@ local SHD_BURN = function ()
             end
             --Spite of Mirenilla
             local spite_of_mirenilla = mq.TLO.Spell('Spite of Mirenilla').RankName()
-            if mq.TLO.Me.CombatAbilityReady(spite_of_mirenilla)() and mq.TLO.Me.Song('Spite of Mirenilla Recourse')() == nil and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Spite of Mirenilla')() and mq.TLO.Me.Song('Spite of Mirenilla Recourse')() == nil and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..spite_of_mirenilla..'')
                 mq.cmdf('/disc %s', spite_of_mirenilla)
                 mq.delay(490)
@@ -4034,7 +4099,7 @@ local SHD_BURN = function ()
             end
             --Xetheg's Carapace
             local xethegs_carapace = mq.TLO.Spell('Xetheg\'s Carapace').RankName()
-            if mq.TLO.Me.CombatAbilityReady(xethegs_carapace)() and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Xetheg\'s Carapace')() and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..xethegs_carapace..'')
                 mq.cmdf('/disc %s', xethegs_carapace)
                 mq.delay(490)
@@ -4044,7 +4109,7 @@ local SHD_BURN = function ()
             end
             --Sanguine Blade
             local sanguine_blade = mq.TLO.Spell('Sanguine Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(sanguine_blade)() and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Sanguine Blade')() and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..sanguine_blade..'')
                 mq.cmdf('/disc %s', sanguine_blade)
                 mq.delay(490)
@@ -4054,7 +4119,7 @@ local SHD_BURN = function ()
             end
             --Grisly Blade
             local grisly_blade = mq.TLO.Spell('Grisly Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(grisly_blade)() and shd_burn_variables.myendurance >= 20 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Grisly Blade')() and shd_burn_variables.myendurance >= 20 and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..grisly_blade..'')
                 mq.cmdf('/disc %s', grisly_blade)
                 mq.delay(490)
@@ -4064,7 +4129,7 @@ local SHD_BURN = function ()
             end
             --Wounding Blade
             local wounding_blade = mq.TLO.Spell('Wounding Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(wounding_blade)() and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Wounding Blade')() and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..wounding_blade..'')
                 mq.cmdf('/disc %s', wounding_blade)
                 mq.delay(490)
@@ -4074,7 +4139,7 @@ local SHD_BURN = function ()
             end
             --Terminal Breath
             local terminal_breath = mq.TLO.Spell('Terminal Breath').RankName()
-            if mq.TLO.Me.CombatAbilityReady(terminal_breath)() and shd_burn_variables.myhp <= 10 and shd_burn_variables.myhp >= 1 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Terminal Breath')() and shd_burn_variables.myhp <= 10 and shd_burn_variables.myhp >= 1 and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..terminal_breath..'')
                 mq.cmdf('/disc %s', terminal_breath)
                 mq.delay(490)
@@ -4084,7 +4149,7 @@ local SHD_BURN = function ()
             end
             --Unrelenting Acrimony
             local unrelenting_acrimony = mq.TLO.Spell('Unrelenting Acrimony').RankName()
-            if mq.TLO.Me.CombatAbilityReady(unrelenting_acrimony)() and shd_burn_variables.maintank == mq.TLO.Me.CleanName() and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Unrelenting Acrimony')() and shd_burn_variables.maintank == mq.TLO.Me.CleanName() and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..unrelenting_acrimony..'')
                 mq.cmdf('/disc %s', unrelenting_acrimony)
                 mq.delay(490)
@@ -4094,7 +4159,7 @@ local SHD_BURN = function ()
             end
             --Fyrthek Mantle
             local fyrthek_mantle = mq.TLO.Spell('Fyrthek Mantle').RankName()
-            if mq.TLO.Me.CombatAbilityReady(fyrthek_mantle)() and shd_burn_variables.myhp <= 50 and shd_burn_variables.myhp >= 1 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Fyrthek Mantle')() and shd_burn_variables.myhp <= 50 and shd_burn_variables.myhp >= 1 and ShdBurn() then
                 mq.cmd('/stopdisc')
                 mq.delay(50)
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..fyrthek_mantle..'')
@@ -4106,7 +4171,7 @@ local SHD_BURN = function ()
             end
             --Deflection Discipline
             local deflection_discipline = mq.TLO.Spell('Deflection Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(deflection_discipline)() and shd_burn_variables.myhp <= 30 and shd_burn_variables.myhp >= 1 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Deflection Discipline')() and shd_burn_variables.myhp <= 30 and shd_burn_variables.myhp >= 1 and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..deflection_discipline..'')
                 mq.cmdf('/disc %s', deflection_discipline)
                 mq.delay(490)
@@ -4116,7 +4181,7 @@ local SHD_BURN = function ()
             end
             --Leechcurse Discipline
             local leechcurse_discipline = mq.TLO.Spell('Leechcurse Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(leechcurse_discipline)() and shd_burn_variables.myhp <= 10 and shd_burn_variables.myhp >= 1 and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Leechcurse Discipline')() and shd_burn_variables.myhp <= 10 and shd_burn_variables.myhp >= 1 and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..leechcurse_discipline..'')
                 mq.cmdf('/disc %s', leechcurse_discipline)
                 mq.delay(490)
@@ -4126,7 +4191,7 @@ local SHD_BURN = function ()
             end
             --Unholy Aura Discipline
             local unholy_aura_discipline = mq.TLO.Spell('Unholy Aura Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(unholy_aura_discipline)() and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Unholy Aura Discipline')() and mq.TLO.Me.ActiveDisc.ID() == nil and ShdBurn() then
                 print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..unholy_aura_discipline..'')
                 mq.cmdf('/disc %s', unholy_aura_discipline)
                 mq.delay(490)
@@ -4136,8 +4201,8 @@ local SHD_BURN = function ()
             end
             --Rigor Mortis
             local rigor_mortis = mq.TLO.Spell('Rigor Mortis').RankName()
-            if mq.TLO.Me.CombatAbilityReady(rigor_mortis)() and shd_burn_variables.myhp <= 5 and shd_burn_variables.myhp >= 1 and not mq.TLO.Me.Feigning() and shd_burn_variables.aggressive == true and shd_burn_variables.combat_true
-                or mq.TLO.Me.CombatAbilityReady(rigor_mortis)() and shd_burn_variables.maintank ~= mq.TLO.Me.CleanName() and mq.TLO.Me.PctAggro() >= 90 and not mq.TLO.Me.Feigning() and ShdBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Rigor Mortis')() and shd_burn_variables.myhp <= 5 and shd_burn_variables.myhp >= 1 and not mq.TLO.Me.Feigning() and shd_burn_variables.aggressive == true and shd_burn_variables.combat_true
+                or mq.TLO.Me.CombatAbilityReady('Rigor Mortis')() and shd_burn_variables.maintank ~= mq.TLO.Me.CleanName() and mq.TLO.Me.PctAggro() >= 90 and not mq.TLO.Me.Feigning() and ShdBurn() then
                     print(easy, ' \ag SHD Burn\aw - \ag[\atCombat Ability\ag]\ao - '..rigor_mortis..'')
                     mq.cmdf('/disc %s', rigor_mortis)
                     mq.delay('1s')
@@ -4417,7 +4482,7 @@ local BER_BURN = function ()
                     mq.delay(500)
                     mq.cmd('/stick')
                     local swift_punch = mq.TLO.Spell('Swift Punch').RankName()
-                    if not mq.TLO.Me.Combat() and mq.TLO.Me.CombatAbilityReady(swift_punch)() then
+                    if not mq.TLO.Me.Combat() and mq.TLO.Me.CombatAbilityReady('Swift Punch')() then
                         mq.cmdf('/disc %s',swift_punch)
                     end
                     mq.cmd('/attack on')
@@ -4436,7 +4501,7 @@ local BER_BURN = function ()
    
     --Breather
     local breather = mq.TLO.Spell('Breather').RankName()
-    if mq.TLO.Me.CombatAbilityReady(breather)() and ber_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and ber_burn_variables.xtarget == 0 and not ber_burn_variables.hovering then
+    if mq.TLO.Me.CombatAbilityReady('Breather')() and ber_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and ber_burn_variables.xtarget == 0 and not ber_burn_variables.hovering then
         print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
         mq.cmdf('/disc %s',breather)
         mq.delay(490)
@@ -4461,14 +4526,14 @@ local BER_BURN = function ()
             if mq.TLO.FindItemCount('=Honed Axe Components')() <= 3 then
                 mq.cmd('/popup You are out of Honed Axe Components')
             end
-            if mq.TLO.Me.CombatAbilityReady(axe_of_the_eviscerator)() and mq.TLO.FindItemCount('=Axe of the Eviscerator')() <= 100 and mq.TLO.FindItemCount('=Honed Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
+            if mq.TLO.Me.CombatAbilityReady('Axe of the Eviscerator')() and mq.TLO.FindItemCount('=Axe of the Eviscerator')() <= 100 and mq.TLO.FindItemCount('=Honed Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_the_eviscerator..'')
                 mq.cmdf('/disc %s',axe_of_the_eviscerator)
                 mq.delay(3000)
                 while mq.TLO.Me.Casting() do mq.delay(250) end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \ag BER Burn \agKeep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 mq.delay(490)
                 if BerEngage() then
@@ -4480,14 +4545,14 @@ local BER_BURN = function ()
             if mq.TLO.FindItemCount('=Honed Axe Components')() <= 3 then
                 mq.cmd('/popup You are out of Honed Axe Components')
             end
-            if mq.TLO.Me.CombatAbilityReady(axe_of_the_conqueror)() and mq.TLO.FindItemCount('=Axe of the Conqueror')() <= 100 and mq.TLO.FindItemCount('=Honed Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
+            if mq.TLO.Me.CombatAbilityReady('Axe of the Conqueror')() and mq.TLO.FindItemCount('=Axe of the Conqueror')() <= 100 and mq.TLO.FindItemCount('=Honed Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_the_conqueror..'')
                 mq.cmdf('/disc %s',axe_of_the_conqueror)
                 mq.delay(3000)
                 while mq.TLO.Me.Casting() do mq.delay(250) end
                 if mq.TLO.Cursor.ID() ~= nil then
                     print(easy, ' \ag BER Burn \agKeep: \ap '..mq.TLO.Cursor.Name())
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
                 mq.delay(490)
                 if BerEngage() then
@@ -4499,14 +4564,14 @@ local BER_BURN = function ()
         if mq.TLO.FindItemCount('=Fine Axe Components')() <= 3 then
             mq.cmd('/popup You are out of Fine Axe Components')
         end
-        if mq.TLO.Me.CombatAbilityReady(axe_of_the_vindicator)() and mq.TLO.FindItemCount('=Axe of the Vindicator')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
+        if mq.TLO.Me.CombatAbilityReady('Axe of the Vindicator')() and mq.TLO.FindItemCount('=Axe of the Vindicator')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
             print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_the_vindicator..'')
             mq.cmdf('/disc %s',axe_of_the_vindicator)
             mq.delay(3000)
             while mq.TLO.Me.Casting() do mq.delay(250) end
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \ag BER Burn \agKeep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
             mq.delay(490)
             if BerEngage() then
@@ -4518,14 +4583,14 @@ local BER_BURN = function ()
         if mq.TLO.FindItemCount('=Fine Axe Components')() <= 3 then
             mq.cmd('/popup You are out of Fine Axe Components')
         end
-        if mq.TLO.Me.CombatAbilityReady(axe_of_the_mangler)() and mq.TLO.FindItemCount('=Axe of the Mangler')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
+        if mq.TLO.Me.CombatAbilityReady('Axe of the Mangler')() and mq.TLO.FindItemCount('=Axe of the Mangler')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
             print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_the_mangler..'')
             mq.cmdf('/disc %s',axe_of_the_mangler)
             mq.delay(3000)
             while mq.TLO.Me.Casting() do mq.delay(250) end
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \ag BER Burn \agKeep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
             mq.delay(490)
             if BerEngage() then
@@ -4537,14 +4602,14 @@ local BER_BURN = function ()
         if mq.TLO.FindItemCount('=Fine Axe Components')() <= 3 then
             mq.cmd('/popup You are out of Fine Axe Components')
         end
-        if mq.TLO.Me.CombatAbilityReady(axe_of_the_demolisher)() and mq.TLO.FindItemCount('=Axe of the Demolisher')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
+        if mq.TLO.Me.CombatAbilityReady('Axe of the Demolisher')() and mq.TLO.FindItemCount('=Axe of the Demolisher')() <= 100 and mq.TLO.FindItemCount('=Fine Axe Components')() >= 4 and not ber_burn_variables.hovering and not mq.TLO.Me.Moving() then
             print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_the_demolisher..'')
             mq.cmdf('/disc %s',axe_of_the_demolisher)
             mq.delay(4000)
             while mq.TLO.Me.Casting() do mq.delay(250) end
             if mq.TLO.Cursor.ID() ~= nil then
                 print(easy, ' \ag BER Burn \agKeep: \ap '..mq.TLO.Cursor.Name())
-                mq.cmd.autoinventory()
+                mq.cmd('/autoinv')
             end
             mq.delay(490)
             if BerEngage() then
@@ -4583,7 +4648,7 @@ local BER_BURN = function ()
             --Combat Abilities
             --Ecliptic Rage
             local ecliptic_rage = mq.TLO.Spell('Ecliptic Rage').RankName()
-            if mq.TLO.Me.CombatAbilityReady(ecliptic_rage)() and mq.TLO.FindItemCount('=Axe of the Mangler')() >= 1 and ber_burn_variables.myendurance >= 10 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Ecliptic Rage')() and mq.TLO.FindItemCount('=Axe of the Mangler')() >= 1 and ber_burn_variables.myendurance >= 10 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ecliptic_rage..'')
                 mq.cmd('/disc 65593')
                 mq.delay(490)
@@ -4593,7 +4658,7 @@ local BER_BURN = function ()
             end
             --Mangling Discipline
             local mangling_discipline = mq.TLO.Spell('Mangling Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(mangling_discipline)() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Mangling Discipline')() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..mangling_discipline..'')
                 mq.cmdf('/disc %s', mangling_discipline)
                 mq.delay(490)
@@ -4603,7 +4668,7 @@ local BER_BURN = function ()
             end
             --Sapping Strikes
             local sapping_strikes = mq.TLO.Spell('Sapping Strikes').RankName()
-            if mq.TLO.Me.CombatAbilityReady(sapping_strikes)() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Sapping Strikes')() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..sapping_strikes..'')
                 mq.cmdf('/disc %s', sapping_strikes)
                 mq.delay(490)
@@ -4613,7 +4678,7 @@ local BER_BURN = function ()
             end
             --Disconcerting Discipline
             local disconcerting_discipline = mq.TLO.Spell('Disconcerting Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(disconcerting_discipline)() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Disconcerting Discipline')() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..disconcerting_discipline..'')
                 mq.cmdf('/disc %s', disconcerting_discipline)
                 mq.delay(490)
@@ -4623,7 +4688,7 @@ local BER_BURN = function ()
             end
             --Vindicator's Coalition
             local vindicators_coalition = mq.TLO.Spell('Vindicator\'s Coalition').RankName()
-            if mq.TLO.Me.CombatAbilityReady(vindicators_coalition)() and mq.TLO.Me.Buff('Vindicator\'s Coalition Effect')() == nil and ber_burn_variables.myendurance >= 10 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Vindicator\'s Coalition')() and mq.TLO.Me.Buff('Vindicator\'s Coalition Effect')() == nil and ber_burn_variables.myendurance >= 10 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..vindicators_coalition..'')
                 mq.cmdf('/disc %s', vindicators_coalition)
                 mq.delay(490)
@@ -4633,7 +4698,7 @@ local BER_BURN = function ()
             end
             --Phantom Assailant
             local phantom_assailant = mq.TLO.Spell('Phantom Assailant').RankName()
-            if mq.TLO.Me.CombatAbilityReady(phantom_assailant)() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Phantom Assailant')() and ber_burn_variables.targethp >= 80 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..phantom_assailant..'')
                 mq.cmdf('/disc %s', phantom_assailant)
                 mq.delay(490)
@@ -4643,7 +4708,7 @@ local BER_BURN = function ()
             end
             --Instinctive Retaliation
             local instinctive_retaliation = mq.TLO.Spell('Instinctive Retaliation').RankName()
-            if mq.TLO.Me.CombatAbilityReady(instinctive_retaliation)() and ber_burn_variables.myhp <=50 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Instinctive Retaliation')() and ber_burn_variables.myhp <=50 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..instinctive_retaliation..'')
                 mq.cmdf('/disc %s', instinctive_retaliation)
                 mq.delay(490)
@@ -4653,7 +4718,7 @@ local BER_BURN = function ()
             end
             --Axe of Orrak
             local axe_of_orrak = mq.TLO.Spell('Axe of Orrak').RankName()
-            if mq.TLO.Me.CombatAbilityReady(axe_of_orrak)() and mq.TLO.FindItemCount('=Axe of the Eviscerator')() >= 1 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Axe of Orrak')() and mq.TLO.FindItemCount('=Axe of the Eviscerator')() >= 1 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_orrak..'')
                 mq.cmdf('/disc %s', axe_of_orrak)
                 mq.delay(490)
@@ -4663,7 +4728,7 @@ local BER_BURN = function ()
             end
             --Axe of Xin Diabo
             local axe_of_xin_diabo = mq.TLO.Spell('Axe of Xin Diabo').RankName()
-            if mq.TLO.Me.CombatAbilityReady(axe_of_xin_diabo)() and mq.TLO.FindItemCount('=Axe of the Conqueror')() >= 1 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Axe of Xin Diabo')() and mq.TLO.FindItemCount('=Axe of the Conqueror')() >= 1 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_xin_diabo..'')
                 mq.cmdf('/disc %s', axe_of_xin_diabo)
                 mq.delay(490)
@@ -4673,7 +4738,7 @@ local BER_BURN = function ()
             end
             --Axe of Derakor
             local axe_of_derakor = mq.TLO.Spell('Axe of Derakor').RankName()
-            if mq.TLO.Me.CombatAbilityReady(axe_of_derakor)() and mq.TLO.FindItemCount('=Axe of the Vindicator')() >= 1 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Axe of Derakor')() and mq.TLO.FindItemCount('=Axe of the Vindicator')() >= 1 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..axe_of_derakor..'')
                 mq.cmdf('/disc %s', axe_of_derakor)
                 mq.delay(490)
@@ -4683,7 +4748,7 @@ local BER_BURN = function ()
             end
             --Prime Retaliation
             local prime_retaliation = mq.TLO.Spell('Prime Retaliation').RankName()
-            if mq.TLO.Me.CombatAbilityReady(prime_retaliation)() and ber_burn_variables.myhp <= 89 and ber_burn_variables.myhp >=10 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Prime Retaliation')() and ber_burn_variables.myhp <= 89 and ber_burn_variables.myhp >=10 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..prime_retaliation..'')
                 mq.cmdf('/disc %s', prime_retaliation)
                 mq.delay(490)
@@ -4693,7 +4758,7 @@ local BER_BURN = function ()
             end
             --Shared Violence
             local shared_violence = mq.TLO.Spell('Shared Violence').RankName()
-            if mq.TLO.Me.CombatAbilityReady(shared_violence)() and ber_burn_variables.targethp <= 99 and ber_burn_variables.targethp >= 50 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Shared Violence')() and ber_burn_variables.targethp <= 99 and ber_burn_variables.targethp >= 50 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..shared_violence..'')
                 mq.cmdf('/disc %s', shared_violence)
                 mq.delay(490)
@@ -4703,7 +4768,7 @@ local BER_BURN = function ()
             end
             --Oppressing Frenzy
             local oppressing_frenzy = mq.TLO.Spell('Oppressing Frenzy').RankName()
-            if mq.TLO.Me.CombatAbilityReady(oppressing_frenzy)() and ber_burn_variables.targethp >= 40 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Oppressing Frenzy')() and ber_burn_variables.targethp >= 40 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..oppressing_frenzy..'')
                 mq.cmdf('/disc %s', oppressing_frenzy)
                 mq.delay(490)
@@ -4713,7 +4778,7 @@ local BER_BURN = function ()
             end
             --Blinding Frenzy
             local blinding_frenzy = mq.TLO.Spell('Blinding Frenzy').RankName()
-            if mq.TLO.Me.CombatAbilityReady(blinding_frenzy)() and ber_burn_variables.myhp <= 89 and ber_burn_variables.myhp >= 25 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Blinding Frenzy')() and ber_burn_variables.myhp <= 89 and ber_burn_variables.myhp >= 25 and BerBurn() then
                 mq.cmd('/stopdisc')
                 mq.delay(50)
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..blinding_frenzy..'')
@@ -4725,7 +4790,7 @@ local BER_BURN = function ()
             end
             --Maiming Axe Throw
             local maiming_axe_throw = mq.TLO.Spell('Maiming Axe Throw').RankName()
-            if mq.TLO.Me.CombatAbilityReady(maiming_axe_throw)() and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Maiming Axe Throw')() and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..maiming_axe_throw..'')
                 mq.cmdf('/disc %s', maiming_axe_throw)
                 mq.delay(490)
@@ -4735,7 +4800,7 @@ local BER_BURN = function ()
             end
             --Bloodthirst
             local bloodthirst = mq.TLO.Spell('Bloodthirst').RankName()
-            if mq.TLO.Me.CombatAbilityReady(bloodthirst)() and ber_burn_variables.targethp >= 50 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Bloodthirst')() and ber_burn_variables.targethp >= 50 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..bloodthirst..'')
                 mq.cmdf('/disc %s', bloodthirst)
                 mq.delay(490)
@@ -4745,7 +4810,7 @@ local BER_BURN = function ()
             end
             --Buttressed Frenzy
             local buttressed_frenzy = mq.TLO.Spell('Buttressed Frenzy').RankName()
-            if mq.TLO.Me.CombatAbilityReady(buttressed_frenzy)() and ber_burn_variables.myhp >= 50 and ber_burn_variables.myhp <= 89 and mq.TLO.Me.Buff('Buttressed Frenzy')() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Buttressed Frenzy')() and ber_burn_variables.myhp >= 50 and ber_burn_variables.myhp <= 89 and mq.TLO.Me.Buff('Buttressed Frenzy')() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..buttressed_frenzy..'')
                 mq.cmdf('/disc %s', buttressed_frenzy)
                 mq.delay(490)
@@ -4755,7 +4820,7 @@ local BER_BURN = function ()
             end
             --Shriveling Strikes
             local shriveling_strikes = mq.TLO.Spell('Shriveling Strikes').RankName()
-            if mq.TLO.Me.CombatAbilityReady(shriveling_strikes)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Shriveling Strikes')() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Shriveling Strikes')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Shriveling Strikes')() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..shriveling_strikes..'')
                 mq.cmdf('/disc %s', shriveling_strikes)
                 mq.delay(490)
@@ -4765,7 +4830,7 @@ local BER_BURN = function ()
             end
             --Frothing Rage
             local frothing_rage = mq.TLO.Spell('Frothing Rage').RankName()
-            if mq.TLO.Me.CombatAbilityReady(frothing_rage)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Frothing Rage')() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Frothing Rage')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Frothing Rage')() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..frothing_rage..'')
                 mq.cmdf('/disc %s', frothing_rage)
                 mq.delay(490)
@@ -4775,7 +4840,7 @@ local BER_BURN = function ()
             end
             --Avenging Flurry Discipline
             local avenging_flurry_discipline = mq.TLO.Spell('Avenging Flurry Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(avenging_flurry_discipline)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Avenging Flurry Discipline')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..avenging_flurry_discipline..'')
                 mq.cmdf('/disc %s', avenging_flurry_discipline)
                 mq.delay(490)
@@ -4785,7 +4850,7 @@ local BER_BURN = function ()
             end
             --Brutal Discipline
             local brutal_discipline = mq.TLO.Spell('Brutal Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(brutal_discipline)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Brutal Discipline')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..brutal_discipline..'')
                 mq.cmdf('/disc %s', brutal_discipline)
                 mq.delay(490)
@@ -4795,7 +4860,7 @@ local BER_BURN = function ()
             end
             --Cleaving Acrimony Discipline
             local cleaving_acrimony_discipline = mq.TLO.Spell('Cleaving Acrimony Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(cleaving_acrimony_discipline)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Cleaving Acrimony Discipline')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..cleaving_acrimony_discipline..'')
                 mq.cmdf('/disc %s', cleaving_acrimony_discipline)
                 mq.delay(490)
@@ -4805,7 +4870,7 @@ local BER_BURN = function ()
             end
             --Eviscerating Volley
             local eviscerating_volley = mq.TLO.Spell('Eviscerating Volley').RankName()
-            if mq.TLO.Me.CombatAbilityReady(eviscerating_volley)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Eviscerating Volley')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..eviscerating_volley..'')
                 mq.cmdf('/disc %s', eviscerating_volley)
                 mq.delay(490)
@@ -4815,7 +4880,7 @@ local BER_BURN = function ()
             end
             --Pulverizing Volley
             local pulverizing_volley = mq.TLO.Spell('Pulverizing Volley').RankName()
-            if mq.TLO.Me.CombatAbilityReady(pulverizing_volley)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Pulverizing Volley')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..pulverizing_volley..'')
                 mq.cmdf('/disc %s', pulverizing_volley)
                 mq.delay(490)
@@ -4825,7 +4890,7 @@ local BER_BURN = function ()
             end
             --Cry Carnage
             local cry_carnage = mq.TLO.Spell('Cry Carnage').RankName()
-            if mq.TLO.Me.CombatAbilityReady(cry_carnage)() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Cry Carnage')() == nil and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Cry Carnage')() and ber_burn_variables.targethp >= 60 and ber_burn_variables.targethp <= 99 and mq.TLO.Me.Song('Cry Carnage')() == nil and mq.TLO.Me.ActiveDisc.ID() == nil and BerBurn() then
                 print(easy, ' \ag BER Burn\aw - \ag[\atCombat Ability\ag]\ao - '..cry_carnage..'')
                 mq.cmdf('/disc %s', cry_carnage)
                 mq.delay(490)
@@ -5074,7 +5139,7 @@ local ROG_BURN = function ()
         end
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and rog_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and rog_burn_variables.xtarget == 0 and not rog_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and rog_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and rog_burn_variables.xtarget == 0 and not rog_burn_variables.hovering then
             print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(500)
@@ -5122,7 +5187,7 @@ local ROG_BURN = function ()
             --Combat Abilities
             --Ecliptic Weapons
             local ecliptic_weapons = mq.TLO.Spell('Ecliptic Weapons').RankName()
-            if RogBurn() and mq.TLO.Me.CombatAbilityReady(ecliptic_weapons)() and mq.TLO.Me.Buff('Ecliptic Weapons')() == nil then
+            if RogBurn() and mq.TLO.Me.CombatAbilityReady('Ecliptic Weapons')() and mq.TLO.Me.Buff('Ecliptic Weapons')() == nil then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ecliptic_weapons..'')
                 mq.cmdf('/disc %s', ecliptic_weapons)
                 mq.delay(490)
@@ -5132,7 +5197,7 @@ local ROG_BURN = function ()
             end
             --Composite Weapons
             local composite_weapons = mq.TLO.Spell('Ecliptic Rage').RankName()
-            if mq.TLO.Me.CombatAbilityReady(composite_weapons)() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and rog_burn_variables.myendurance >= 10 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Ecliptic Rage')() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and rog_burn_variables.myendurance >= 10 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..composite_weapons..'')
                 mq.cmdf('/disc %s', composite_weapons)
                 mq.delay(490)
@@ -5142,7 +5207,7 @@ local ROG_BURN = function ()
             end
             --Poisonous Coalition
             local poisonous_coalition = mq.TLO.Spell('Poisonous Coalition').RankName()
-            if mq.TLO.Me.CombatAbilityReady(poisonous_coalition)() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 20 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Poisonous Coalition')() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 20 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..poisonous_coalition..'')
                 mq.cmdf('/disc %s', poisonous_coalition)
                 mq.delay(490)
@@ -5152,7 +5217,7 @@ local ROG_BURN = function ()
             end
             --Veiled Blade
             local veiled_blade = mq.TLO.Spell('Veiled Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(veiled_blade)() and mq.TLO.Me.Song('Veiled Blade')() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Veiled Blade')() and mq.TLO.Me.Song('Veiled Blade')() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..veiled_blade..'')
                 mq.cmdf('/disc %s', veiled_blade)
                 mq.delay(490)
@@ -5162,7 +5227,7 @@ local ROG_BURN = function ()
             end
             --Obfuscated Blade
             local obfuscated_blade = mq.TLO.Spell('Obfuscated Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(obfuscated_blade)() and not mq.TLO.Me.CombatAbilityReady(veiled_blade)() and mq.TLO.Me.Song('Obfuscated Blade')() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Obfuscated Blade')() and not mq.TLO.Me.CombatAbilityReady('Veiled Blade')() and mq.TLO.Me.Song('Obfuscated Blade')() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..obfuscated_blade..'')
                 mq.cmdf('/disc %s', obfuscated_blade)
                 mq.delay(490)
@@ -5172,7 +5237,7 @@ local ROG_BURN = function ()
             end
             --Phantom Assassin
             local phantom_assassin = mq.TLO.Spell('Phantom Assassin').RankName()
-            if mq.TLO.Me.CombatAbilityReady(phantom_assassin)() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.Buff('Assassin\'s Premonition')() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Phantom Assassin')() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.Buff('Assassin\'s Premonition')() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..phantom_assassin..'')
                 mq.cmdf('/disc %s', phantom_assassin)
                 mq.delay(490)
@@ -5182,7 +5247,7 @@ local ROG_BURN = function ()
             end
             --Jugular Rend
             local jugular_rend = mq.TLO.Spell('Jugular Rend').RankName()
-            if mq.TLO.Me.CombatAbilityReady(jugular_rend)() and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Jugular Rend')() and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..jugular_rend..'')
                 mq.cmdf('/disc %s', jugular_rend)
                 mq.delay(490)
@@ -5192,7 +5257,7 @@ local ROG_BURN = function ()
             end
             --Weapon Covenant
             local weapon_covenant = mq.TLO.Spell('Weapon Covenant').RankName()
-            if mq.TLO.Me.CombatAbilityReady(weapon_covenant)() and mq.TLO.Me.ActiveDisc() == nil and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Weapon Covenant')() and mq.TLO.Me.ActiveDisc() == nil and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..weapon_covenant..'')
                 mq.cmdf('/disc %s', weapon_covenant)
                 mq.delay(490)
@@ -5202,7 +5267,7 @@ local ROG_BURN = function ()
             end
             --Knifeplay Discipline
             local knifeplay = mq.TLO.Spell('Knifeplay Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(knifeplay)() and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Knifeplay Discipline')() and rog_burn_variables.targethp >=50 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..knifeplay..'')
                 mq.cmdf('/disc %s', knifeplay)
                 mq.delay(490)
@@ -5212,7 +5277,7 @@ local ROG_BURN = function ()
             end
             --Foolish Mark
             local foolish_mark = mq.TLO.Spell('Foolish Mark').RankName()
-            if mq.TLO.Me.CombatAbilityReady(foolish_mark)() and rog_burn_variables.targetlevel <= 120 and rog_burn_variables.targetlevel >= 100 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Foolish Mark')() and rog_burn_variables.targetlevel <= 120 and rog_burn_variables.targetlevel >= 100 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..foolish_mark..'')
                 mq.cmdf('/disc %s', foolish_mark)
                 mq.delay(490)
@@ -5222,7 +5287,7 @@ local ROG_BURN = function ()
             end
             --Baleful Aim Discipline
             local baleful_aim_discipline = mq.TLO.Spell('Baleful Aim Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(baleful_aim_discipline)() and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Baleful Aim Discipline')() and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..baleful_aim_discipline..'')
                 mq.cmdf('/disc %s', baleful_aim_discipline)
                 mq.delay(490)
@@ -5232,7 +5297,7 @@ local ROG_BURN = function ()
             end
             --Crinotoxin Discipline
             local crinotoxin_discipline = mq.TLO.Spell('Crinotoxin Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(crinotoxin_discipline)() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Crinotoxin Discipline')() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..crinotoxin_discipline..'')
                 mq.cmdf('/disc %s', crinotoxin_discipline)
                 mq.delay(490)
@@ -5242,7 +5307,7 @@ local ROG_BURN = function ()
             end
             --Exotoxin Discipline
             local exotoxin_discipline = mq.TLO.Spell('Exotoxin Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(exotoxin_discipline)() and not mq.TLO.Me.CombatAbilityReady(crinotoxin_discipline)() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Exotoxin Discipline')() and not mq.TLO.Me.CombatAbilityReady('Crinotoxin Discipline')() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 50 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..exotoxin_discipline..'')
                 mq.cmdf('/disc %s', exotoxin_discipline)
                 mq.delay(490)
@@ -5252,7 +5317,7 @@ local ROG_BURN = function ()
             end
             --Ragged Edge Discipline
             local ragged_edge_discipline = mq.TLO.Spell('Ragged Edge Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(ragged_edge_discipline)() and rog_burn_variables.targethp >= 40 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Ragged Edge Discipline')() and rog_burn_variables.targethp >= 40 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ragged_edge_discipline..'')
                 mq.cmdf('/disc %s', ragged_edge_discipline)
                 mq.delay(490)
@@ -5262,7 +5327,7 @@ local ROG_BURN = function ()
             end
             --Agitating Smoke
             local agitating_smoke = mq.TLO.Spell('Agitating Smoke').RankName()
-            if mq.TLO.Me.CombatAbilityReady(agitating_smoke)() and rog_burn_variables.myhp <= 50 and rog_burn_variables.myhp >= 1 and rog_burn_variables.xtarget >= 2 and rog_burn_variables.myendurance >= 5 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Agitating Smoke')() and rog_burn_variables.myhp <= 50 and rog_burn_variables.myhp >= 1 and rog_burn_variables.xtarget >= 2 and rog_burn_variables.myendurance >= 5 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..agitating_smoke..'')
                 mq.cmdf('/disc %s', agitating_smoke)
                 mq.delay(490)
@@ -5272,7 +5337,7 @@ local ROG_BURN = function ()
             end
             --Trickery
             local trickery = mq.TLO.Spell('Trickery').RankName()
-            if mq.TLO.Me.CombatAbilityReady(trickery)() and rog_burn_variables.myendurance >= 5 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Trickery')() and rog_burn_variables.myendurance >= 5 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..trickery..'')
                 mq.cmdf('/disc %s', trickery)
                 mq.delay(490)
@@ -5282,7 +5347,7 @@ local ROG_BURN = function ()
             end
             --Beguile
             local beguile = mq.TLO.Spell('Beguile').RankName()
-            if mq.TLO.Me.CombatAbilityReady(beguile)() and rog_burn_variables.myendurance >= 5 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Beguile')() and rog_burn_variables.myendurance >= 5 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..beguile..'')
                 mq.cmdf('/disc %s', beguile)
                 mq.delay(490)
@@ -5292,7 +5357,7 @@ local ROG_BURN = function ()
             end
             --Disorienting Puncture
             local disorienting_puncture = mq.TLO.Spell('Disorienting Puncture').RankName()
-            if mq.TLO.Me.CombatAbilityReady(disorienting_puncture)() and rog_burn_variables.myendurance >= 5 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Disorienting Puncture')() and rog_burn_variables.myendurance >= 5 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..disorienting_puncture..'')
                 mq.cmdf('/disc %s', disorienting_puncture)
                 mq.delay(490)
@@ -5302,7 +5367,7 @@ local ROG_BURN = function ()
             end
             --Pinpoint Fault
             local pinpoint_fault = mq.TLO.Spell('Pinpoint Fault').RankName()
-            if mq.TLO.Me.CombatAbilityReady(pinpoint_fault)() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 10 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Pinpoint Fault')() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 10 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..pinpoint_fault..'')
                 mq.cmdf('/disc %s', pinpoint_fault)
                 mq.delay(490)
@@ -5312,7 +5377,7 @@ local ROG_BURN = function ()
             end
             --Pinpoint Defects
             local pinpoint_defects = mq.TLO.Spell('Pinpoint Defects').RankName()
-            if mq.TLO.Me.CombatAbilityReady(pinpoint_defects)() and not mq.TLO.Me.CombatAbilityReady(pinpoint_fault)() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 10 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Pinpoint Defects')() and not mq.TLO.Me.CombatAbilityReady('Pinpoint Fault')() and rog_burn_variables.targethp >= 50 and rog_burn_variables.targethp <= 99 and rog_burn_variables.myendurance >= 10 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..pinpoint_defects..'')
                 mq.cmdf('/disc %s', pinpoint_defects)
                 mq.delay(490)
@@ -5322,7 +5387,7 @@ local ROG_BURN = function ()
             end
             --Mayhem
             local mayhem = mq.TLO.Spell('Mayhem').RankName()
-            if mq.TLO.Me.CombatAbilityReady(mayhem)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Mayhem')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..mayhem..'')
                 mq.cmdf('/disc %s', mayhem)
                 mq.delay(490)
@@ -5332,7 +5397,7 @@ local ROG_BURN = function ()
             end
             --Shadowstrike
             local shadowstrike = mq.TLO.Spell('Shadowstrike').RankName()
-            if mq.TLO.Me.CombatAbilityReady(shadowstrike)() and not mq.TLO.Me.CombatAbilityReady(mayhem)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Shadowstrike')() and not mq.TLO.Me.CombatAbilityReady('Mayhem')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..shadowstrike..'')
                 mq.cmdf('/disc %s', shadowstrike)
                 mq.delay(490)
@@ -5342,7 +5407,7 @@ local ROG_BURN = function ()
             end
             --Venomous Blade
             local venomous_blade = mq.TLO.Spell('Venomous Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(venomous_blade)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Venomous Blade')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..venomous_blade..'')
                 mq.cmdf('/disc %s', venomous_blade)
                 mq.delay(490)
@@ -5352,7 +5417,7 @@ local ROG_BURN = function ()
             end
             --Netherbian Blade
             local netherbian_blade = mq.TLO.Spell('Netherbian Blade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(netherbian_blade)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Netherbian Blade')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..netherbian_blade..'')
                 mq.cmdf('/disc %s', netherbian_blade)
                 mq.delay(490)
@@ -5362,7 +5427,7 @@ local ROG_BURN = function ()
             end
             --Ambuscade
             local ambuscade = mq.TLO.Spell('Ambuscade').RankName()
-            if mq.TLO.Me.CombatAbilityReady(ambuscade)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and rog_burn_variables.targetlevel <= 120 and rog_burn_variables.myendurance >= 10 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Ambuscade')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and rog_burn_variables.targetlevel <= 120 and rog_burn_variables.myendurance >= 10 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ambuscade..'')
                 mq.cmdf('/disc %s', ambuscade)
                 mq.delay(490)
@@ -5372,7 +5437,7 @@ local ROG_BURN = function ()
             end
             --Frenzied Stabbing Discipline
             local frenzied_stabbing_discipline = mq.TLO.Spell('Frenzied Stabbing Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(frenzied_stabbing_discipline)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Frenzied Stabbing Discipline')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..frenzied_stabbing_discipline..'')
                 mq.cmdf('/disc %s', frenzied_stabbing_discipline)
                 mq.delay(490)
@@ -5382,7 +5447,7 @@ local ROG_BURN = function ()
             end
             --Unseeable Discipline
             local unseeable_discipline = mq.TLO.Spell('Unseeable Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(unseeable_discipline)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Unseeable Discipline')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..unseeable_discipline..'')
                 mq.cmdf('/disc %s', unseeable_discipline)
                 mq.delay(490)
@@ -5392,7 +5457,7 @@ local ROG_BURN = function ()
             end
             --Twisted Chance Discipline
             local twisted_chance_discipline = mq.TLO.Spell('Twisted Chance Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(twisted_chance_discipline)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Twisted Chance Discipline')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..twisted_chance_discipline..'')
                 mq.cmdf('/disc %s', twisted_chance_discipline)
                 mq.delay(490)
@@ -5402,7 +5467,7 @@ local ROG_BURN = function ()
             end
             --Executioner Discipline
             local executioner_discipline = mq.TLO.Spell('Executioner Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(executioner_discipline)() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Executioner Discipline')() and rog_burn_variables.targethp >= 60 and rog_burn_variables.targethp <= 99 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..executioner_discipline..'')
                 mq.cmdf('/disc %s', executioner_discipline)
                 mq.delay(490)
@@ -5412,7 +5477,7 @@ local ROG_BURN = function ()
             end
             --Counterattack Discipline
             local counterattack_discipline = mq.TLO.Spell('Counterattack Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(counterattack_discipline)() and rog_burn_variables.myhp <= 60 and rog_burn_variables.targethp >= 1 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Counterattack Discipline')() and rog_burn_variables.myhp <= 60 and rog_burn_variables.targethp >= 1 and mq.TLO.Me.ActiveDisc.ID() == nil and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..counterattack_discipline..'')
                 mq.cmdf('/disc %s', counterattack_discipline)
                 mq.delay(490)
@@ -5422,7 +5487,7 @@ local ROG_BURN = function ()
             end
             --Storied Escape
             local storied_escape = mq.TLO.Spell('Storied Escape').RankName()
-            if mq.TLO.Me.CombatAbilityReady(storied_escape)() and rog_burn_variables.myhp <= 10 and rog_burn_variables.targethp >= 1 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Storied Escape')() and rog_burn_variables.myhp <= 10 and rog_burn_variables.targethp >= 1 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..storied_escape..'')
                 mq.cmdf('/disc %s', storied_escape)
                 mq.delay(490)
@@ -5432,7 +5497,7 @@ local ROG_BURN = function ()
             end
             --Gutsy Escape
             local gutsy_escape = mq.TLO.Spell('Gutsy Escape').RankName()
-            if mq.TLO.Me.CombatAbilityReady(gutsy_escape)() and not mq.TLO.Me.CombatAbilityReady(storied_escape)() and rog_burn_variables.myhp <= 10 and rog_burn_variables.targethp >= 1 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Gutsy Escape')() and not mq.TLO.Me.CombatAbilityReady('Storied Escape')() and rog_burn_variables.myhp <= 10 and rog_burn_variables.targethp >= 1 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..gutsy_escape..'')
                 mq.cmdf('/disc %s', gutsy_escape)
                 mq.delay(490)
@@ -5442,7 +5507,7 @@ local ROG_BURN = function ()
             end
             --Lance
             local lance = mq.TLO.Spell('Lance').RankName()
-            if mq.TLO.Me.CombatAbilityReady(lance)() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 75 and rog_burn_variables.myhp >= 80 and rog_burn_variables.myhp <= 100 and rog_burn_variables.myendurance >= 5 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Lance')() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 75 and rog_burn_variables.myhp >= 80 and rog_burn_variables.myhp <= 100 and rog_burn_variables.myendurance >= 5 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..lance..'')
                 mq.cmdf('/disc %s', lance)
                 mq.delay(490)
@@ -5452,7 +5517,7 @@ local ROG_BURN = function ()
             end
             --Blinding Candascence
             local blinding_candascence = mq.TLO.Spell('Blinding Candascence').RankName()
-            if mq.TLO.Me.CombatAbilityReady(blinding_candascence)() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 75 and RogBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Blinding Candascence')() and rog_burn_variables.targethp <= 99 and rog_burn_variables.targethp >= 75 and RogBurn() then
                 print(easy, ' \ag ROG Burn\aw - \ag[\atCombat Ability\ag]\ao - '..blinding_candascence..'')
                 mq.cmdf('/disc %s', blinding_candascence)
                 mq.delay(490)
@@ -5620,7 +5685,7 @@ local MNK_BURN = function ()
         end
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and mnk_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and mnk_burn_variables.xtarget == 0 and not mnk_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and mnk_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and mnk_burn_variables.xtarget == 0 and not mnk_burn_variables.hovering then
             print(easy, ' \ag MNK Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -5660,7 +5725,7 @@ local MNK_BURN = function ()
             --Combat Abilities
             --Buffeting of Fists
             local buffeting_of_fists = mq.TLO.Spell('Buffeting of Fists').RankName()
-            if mq.TLO.Me.CombatAbilityReady(buffeting_of_fists)() and mnk_burn_variables.targethp <= 99 and mnk_burn_variables.targethp >= 50 and MnkBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Buffeting of Fists')() and mnk_burn_variables.targethp <= 99 and mnk_burn_variables.targethp >= 50 and MnkBurn() then
                 print(easy, ' \ag MNK Burn\aw - \ag[\atCombat Ability\ag]\ao - '..buffeting_of_fists..'')
                 mq.cmdf('/disc %s', buffeting_of_fists)
                 mq.delay(490)
@@ -5848,7 +5913,7 @@ local BST_BURN = function ()
         
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and bst_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and bst_burn_variables.xtarget == 0 and not bst_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and bst_burn_variables.myendurance <= 20 and not mq.TLO.Me.Combat() and mq.TLO.Me.Song('Breather')() == nil and bst_burn_variables.xtarget == 0 and not bst_burn_variables.hovering then
             print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -5910,7 +5975,7 @@ local BST_BURN = function ()
             --Combat Abilities
             --Kejaan's Vindication
             local kejaans_vindication = mq.TLO.Spell('Kejaan\'s Vindication').RankName()
-            if mq.TLO.Me.CombatAbilityReady(kejaans_vindication)() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 50 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Kejaan\'s Vindication')() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 50 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..kejaans_vindication..'')
                 mq.cmdf('/disc %s', kejaans_vindication)
                 mq.delay(490)
@@ -5920,7 +5985,7 @@ local BST_BURN = function ()
             end
             --Reflexive Riving
             local reflexive_riving = mq.TLO.Spell('Reflexive Riving').RankName()
-            if mq.TLO.Me.CombatAbilityReady(reflexive_riving)() and bst_burn_variables.targethp >= 80 and bst_burn_variables.targethp <= 99 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Reflexive Riving')() and bst_burn_variables.targethp >= 80 and bst_burn_variables.targethp <= 99 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..reflexive_riving..'')
                 mq.cmdf('/disc %s', reflexive_riving)
                 mq.delay(490)
@@ -5930,7 +5995,7 @@ local BST_BURN = function ()
             end
             --Monkey's Spirit Discipline
             local monkeys_spirit_discipline = mq.TLO.Spell('Monkey\'s Spirit Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(monkeys_spirit_discipline)() and bst_burn_variables.myhp <= 60 and bst_burn_variables.myhp >= 1 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Monkey\'s Spirit Discipline')() and bst_burn_variables.myhp <= 60 and bst_burn_variables.myhp >= 1 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..monkeys_spirit_discipline..'')
                 mq.cmdf('/disc %s', monkeys_spirit_discipline)
                 mq.delay(490)
@@ -5940,7 +6005,7 @@ local BST_BURN = function ()
             end
             --Clobber
             local clobber = mq.TLO.Spell('Clobber').RankName()
-            if mq.TLO.Me.CombatAbilityReady(clobber)() and bst_burn_variables.targethp >= 60 and bst_burn_variables.targethp <= 99 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Clobber')() and bst_burn_variables.targethp >= 60 and bst_burn_variables.targethp <= 99 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..clobber..'')
                 mq.cmdf('/disc %s', clobber)
                 mq.delay(490)
@@ -5950,7 +6015,7 @@ local BST_BURN = function ()
             end
             --Bestial Fierceness
             local bestial_fierceness = mq.TLO.Spell('Bestial Fierceness').RankName()
-            if mq.TLO.Me.CombatAbilityReady(bestial_fierceness)() and bst_burn_variables.targethp >=50 and bst_burn_variables.targethp <= 99 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Bestial Fierceness')() and bst_burn_variables.targethp >=50 and bst_burn_variables.targethp <= 99 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..bestial_fierceness..'')
                 mq.cmdf('/disc %s', bestial_fierceness)
                 mq.delay(490)
@@ -5960,7 +6025,7 @@ local BST_BURN = function ()
             end
             --Eruption of Claws
             local eruption_of_claws = mq.TLO.Spell('Eruption of Claws').RankName()
-            if mq.TLO.Me.CombatAbilityReady(eruption_of_claws)() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 55 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Eruption of Claws')() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 55 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..eruption_of_claws..'')
                 mq.cmdf('/disc %s', eruption_of_claws)
                 mq.delay(490)
@@ -5970,7 +6035,7 @@ local BST_BURN = function ()
             end
             --Resistant Discipline
             local resistant_discipline = mq.TLO.Spell('Resistant Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(resistant_discipline)() and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Resistant Discipline')() and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..resistant_discipline..'')
                 mq.cmdf('/disc %s', resistant_discipline)
                 mq.delay(490)
@@ -5980,7 +6045,7 @@ local BST_BURN = function ()
             end
             --Ruaabri's Fury
             local ruaabris_fury = mq.TLO.Spell('Ruaabri\'s Fury').RankName()
-            if mq.TLO.Me.CombatAbilityReady(ruaabris_fury)() and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Ruaabri\'s Fury')() and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..ruaabris_fury..'')
                 mq.cmdf('/disc %s', ruaabris_fury)
                 mq.delay(490)
@@ -5990,7 +6055,7 @@ local BST_BURN = function ()
             end
             --Savage Rancor
             local savage_rancor = mq.TLO.Spell('Savage Rancor').RankName()
-            if mq.TLO.Me.CombatAbilityReady(savage_rancor)() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 50 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Savage Rancor')() and bst_burn_variables.targethp <= 99 and bst_burn_variables.targethp >= 50 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..savage_rancor..'')
                 mq.cmdf('/disc %s', savage_rancor)
                 mq.delay(490)
@@ -6000,7 +6065,7 @@ local BST_BURN = function ()
             end
             --Protective Spirit Discipline
             local protective_spirit_discipline = mq.TLO.Spell('Protective Spirit Discipline').RankName()
-            if mq.TLO.Me.CombatAbilityReady(protective_spirit_discipline)() and bst_burn_variables.myhp <= 60 and bst_burn_variables.myhp >= 1 and BstBurn() then
+            if mq.TLO.Me.CombatAbilityReady('Protective Spirit Discipline')() and bst_burn_variables.myhp <= 60 and bst_burn_variables.myhp >= 1 and BstBurn() then
                 print(easy, ' \ag BST Burn\aw - \ag[\atCombat Ability\ag]\ao - '..protective_spirit_discipline..'')
                 mq.cmdf('/disc %s', protective_spirit_discipline)
                 mq.delay(490)
@@ -6338,7 +6403,7 @@ local NEC_BURN = function ()
                 mq.cmd('/ctrl /itemnotify "Ether-Fused Shard" leftmouseup')
                 mq.delay('1s')
                 if mq.TLO.Cursor.ID() == 85487 then
-                    mq.cmd.destroy()
+                    mq.cmd('/destroy')
                     print(easy, ' \arNec Destroyed:\ay (Empty) \apEther-Fused Shard.')
                 end
                 mq.delay(500)
@@ -6805,7 +6870,7 @@ local MAG_BURN = function ()
                 mq.cmd('/ctrl /itemnotify "Ether-Fused Shard" leftmouseup')
                 mq.delay('1s')
                 if mq.TLO.Cursor.ID() == 85487 then
-                    mq.cmd.destroy()
+                    mq.cmd('/destroy')
                     print(easy, ' \arMag Destroyed:\ay (Empty) \apEther-Fused Shard.')
                 end
                 mq.delay(500)
@@ -6818,7 +6883,7 @@ local MAG_BURN = function ()
                 mq.cmd('/ctrl /itemnotify "Summoned: Darkshine Staff" leftmouseup')
                 mq.delay('1s')
                 if mq.TLO.Cursor.ID() == 109889 then
-                    mq.cmd.destroy()
+                    mq.cmd('/destroy')
                     print(easy, ' \arMag Destroyed:\ay (Empty) \apSummoned: Darkshine Staff.')
                 end
                 mq.delay(500)
@@ -6858,7 +6923,7 @@ local MAG_BURN = function ()
                    MagAggro()
                 end
                 if mq.TLO.Cursor.ID() then
-                    mq.cmd.autoinventory()
+                    mq.cmd('/autoinv')
                 end
             end
         if MagBurn() then
@@ -7293,7 +7358,7 @@ local SHM_BURN = function ()
 
         --Breather
         local breather = mq.TLO.Spell('Breather').RankName()
-        if mq.TLO.Me.CombatAbilityReady(breather)() and shm_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and shm_burn_variables.xtarget == 0 and not shm_burn_variables.combat_true and not shm_burn_variables.hovering then
+        if mq.TLO.Me.CombatAbilityReady('Breather')() and shm_burn_variables.myendurance <= 20 and mq.TLO.Me.Song('Breather')() == nil and shm_burn_variables.xtarget == 0 and not shm_burn_variables.combat_true and not shm_burn_variables.hovering then
             print(easy, ' \ag SHM Burn\aw - \ag[\atCombat Ability\ag]\ao - '..breather..'')
             mq.cmdf('/disc %s', breather)
             mq.delay(490)
@@ -7769,6 +7834,11 @@ local itemoptions = {
         selected = saved_settings.summon_milk,
         action = MilkDispenser
     }, {
+        name = 'Summon Picnic',
+        helper = 'Uses Packed Picnic Basket',
+        selected = saved_settings.summon_picnic,
+        action = PicnicDispenser
+    }, {
         name = 'Summon Brew',
         helper = 'Uses Brell\'s Brew Dispenser',
         selected = saved_settings.summon_brew,
@@ -7966,7 +8036,7 @@ local function TrackPlat()
     current_plat = mq.TLO.Me.Platinum()
 end
 
-local function Cannon()
+local function Cannonballdex()
     for _, value in ipairs(campoptions) do
         if value.selected then
             value.action()
@@ -8054,7 +8124,7 @@ local function navEnabledPC(loc)
     end
 end
 
-local function CannonGUI()
+local function CannonballdexGUI()
     if mq.TLO.Me.Invis('UNDEAD')() == false then
         Invis_IVU_Status = "NO"
     end
@@ -8071,587 +8141,812 @@ local function CannonGUI()
         CampFireZone = "NONE"
         CampfireDuration = 0
     end
-    if mq.TLO.Me.HaveExpansion(30)() then
+    if mq.TLO.Me.HaveExpansion(31)() then
+        expansion_owned = "The Outer Brood"
+    end
+    if mq.TLO.Me.HaveExpansion(30)() and not mq.TLO.Me.HaveExpansion(31)() then
         expansion_owned = "Laurion's Song"
     end
-    if mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() then
+    if mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() and not mq.TLO.Me.HaveExpansion(31)() then
         expansion_owned = "Night of Shadows"
     end
-    if mq.TLO.Me.HaveExpansion(28)() and not mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() then
+    if mq.TLO.Me.HaveExpansion(28)() and not mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() and not mq.TLO.Me.HaveExpansion(31)() then
         expansion_owned = "Terror of Luclin"
     end
-    if mq.TLO.Me.HaveExpansion(27)() and not mq.TLO.Me.HaveExpansion(28)() and not mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() then
-        expansion_owned = "Claws of Veeshan"
-    end
-    if mq.TLO.Me.HaveExpansion(26)() and not mq.TLO.Me.HaveExpansion(27)() and not mq.TLO.Me.HaveExpansion(28)() and not mq.TLO.Me.HaveExpansion(29)() and not mq.TLO.Me.HaveExpansion(30)() then
-        expansion_owned = "Torment of Velious"
-    end
-if Open then
-    Open, ShowUI = ImGui.Begin('Easy.lua by Cannonballdex', Open)
-    ImGui.SetWindowSize(500, 250, ImGuiCond.Once)
-    ImGui.SetWindowFontScale(saved_settings.font_size or 1)
-    if ShowUI then
-        if pause_switch then
-            if ImGui.Button(ICONS.FA_PLAY_CIRCLE) then
-                pause_switch = false
-                gm_switch = false
-            end
-            ImGui.SameLine()
-            HelpMarker("Start will resume all actions of the script")
-            ImGui.SameLine()
-            if ImGui.Button(ICONS.MD_STOP) then
-                mq.cmd('/lua stop easy')
-            end
-            ImGui.SameLine()
-            HelpMarker("End My Script")
-            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
-            ImGui.SameLine()
-            if ImGui.Button(ICONS.FA_STOP) then
-                mq.cmd('/dge /lua stop easy')
-            end
-            ImGui.SameLine()
-            HelpMarker("End Script on All Toons connected to DanNet")
-        end
-            ImGui.SameLine()
-            ImGui.Text("Status: ")
-            ImGui.SameLine()
-            ImGui.TextColored(1,1,0,1,"[ PAUSED ]")
-        end
-        if not pause_switch then
-            if ImGui.Button(ICONS.MD_PAUSE_CIRCLE_FILLED) then
-                pause_switch = true
-            end
-            ImGui.SameLine()
-            HelpMarker("Pause all actions of the script")
-            ImGui.SameLine()
-            if ImGui.Button(ICONS.MD_STOP) then
-                mq.cmd('/lua stop easy')
-            end
-            HelpMarker("End Script")
-            ImGui.SameLine()
-            ImGui.Text("Status: ")
-            ImGui.SameLine()
-            ImGui.TextColored(0,1,0,1,"[ RUNNING ]")
-            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
-            ImGui.SameLine()
-            if pause_switch_all then
-                if ImGui.Button(ICONS.MD_PLAYLIST_PLAY) then
-                    mq.cmd('/dgex /lua pause easy')
-                    pause_switch_all = false
+
+    if Open then
+        Open, ShowUI = ImGui.Begin('Easy.lua by Cannonballdex', Open)
+        ImGui.SetWindowSize(500, 250, ImGuiCond.Once)
+        ImGui.SetWindowFontScale(saved_settings.font_size or 1)
+        if ShowUI then
+            if pause_switch then
+                if ImGui.Button(ICONS.FA_PLAY_CIRCLE) then
+                    pause_switch = false
+                    gm_switch = false
                 end
-                HelpMarker("Start will resume all actions of the script on toons connected to DanNet")
                 ImGui.SameLine()
-                ImGui.Text("Status: ")
+                HelpMarker("Start will resume all actions of the script")
                 ImGui.SameLine()
-                ImGui.TextColored(1,1,0,1,"[ PEERS PAUSED ]")
-                ImGui.Separator()
-            end
-            ImGui.SameLine()
-            if not pause_switch_all then
-                ImGui.SameLine()
-                if ImGui.Button(ICONS.FA_PAUSE_CIRCLE_O) then
-                    mq.cmd('/dgex /lua pause easy')
-                    pause_switch_all = true
+                if ImGui.Button(ICONS.MD_STOP) then
+                    mq.cmd('/lua stop easy')
                 end
-                HelpMarker("Pause all actions of the script on all toons connected to DanNet")                       
                 ImGui.SameLine()
-                if ImGui.Button(ICONS.FA_STOP) then
-                    mq.cmd('/dgex /lua stop easy')
-                end
+                HelpMarker("End My Script")
+                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+                ImGui.SameLine()
+                    if ImGui.Button(ICONS.FA_STOP) then
+                        mq.cmd('/dge /lua stop easy')
+                    end
                 ImGui.SameLine()
                 HelpMarker("End Script on All Toons connected to DanNet")
+                end
                 ImGui.SameLine()
                 ImGui.Text("Status: ")
                 ImGui.SameLine()
-                ImGui.TextColored(0,1,0,1,"[ PEERS RUNNING ]")
+                ImGui.TextColored(1,1,0,1,"[ PAUSED ]")
             end
-        end
-    end
-        ImGui.Separator()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.FA_EYE)
-        HelpMarker('Invisible to Undead')
-        ImGui.SameLine()
-        ImGui.Text("IVU:")
-        ImGui.SameLine()
-        if mq.TLO.Me.Invis('UNDEAD')() then
-            ImGui.TextColored(0,1,0,1,"[ " .. Invis_IVU_Status .. " ]")
-        elseif not mq.TLO.Me.Invis('UNDEAD')() then
-            ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Invis_IVU_Status .. " ]")
-        end
-        ImGui.SameLine() ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.FA_STREET_VIEW)
-        HelpMarker('Rooted')
-        ImGui.SameLine()
-        ImGui.Text("Root:")
-        ImGui.SameLine()
-        if mq.TLO.Me.Rooted() then
-            ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Root_Status .. " ]")
-        elseif not mq.TLO.Me.Rooted() then
-            ImGui.TextColored(0, 1, 0, 1,"[ " .. Root_Status .. " ]")
-        end
-        ImGui.SameLine() ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.MD_DIRECTIONS_WALK)
-        HelpMarker('Snared')
-        ImGui.SameLine()
-        ImGui.Text("Snare:")
-        ImGui.SameLine()
-        if mq.TLO.Me.Snared() then
-            ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Snare_Status .. " ]")
-        elseif not mq.TLO.Me.Snared() then
-            ImGui.TextColored(0, 1, 0, 1,"[ " .. Snare_Status .. " ]")
-        end
-        ImGui.SameLine() ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.MD_CLOUD)
-        HelpMarker('Levitating')
-        ImGui.SameLine()
-        ImGui.Text("Levi:")
-        ImGui.SameLine()
-        if mq.TLO.Me.Levitating() then
-            ImGui.TextColored(0, 1, 0, 1,"[ " .. Levitate_Status .. " ]")
-        elseif not mq.TLO.Me.Levitating() then
-            ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Levitate_Status .. " ]")
-        end
-        ImGui.Separator()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.MD_PERSON)
-        ImGui.SameLine()
-        local pcs = mq.TLO.SpawnCount('pc')() - mq.TLO.SpawnCount('guild pc')()
-        HelpMarker('Other Players | Guild Members in Zone.')
-        ImGui.SameLine()
-        if pcs > 50 then
-            ImGui.TextColored(0.95, 0.05, 0.05, 1, '[ '..tostring(pcs)..' ]')
-        elseif pcs > 24 then
-            ImGui.TextColored(0.6, 0.6, 0, 1, '[ '..tostring(pcs)..' ]')
-        elseif pcs > 0 then
-            ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..tostring(pcs)..' ]')
-        elseif pcs == 0 then
-            ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..tostring(pcs)..' ]')
-        else
-            ImGui.TextDisabled(tostring(pcs))
-        end
-        HelpMarker('Other Players in Zone.')
-        ImGui.SameLine()
-        ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..mq.TLO.SpawnCount('guild pc')()..' ]')
-        HelpMarker('Guild Members in Zone.')
-        ImGui.SameLine() ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.MD_PERSON_OUTLINE)
-        HelpMarker('Total Peers and Peers in Zone.')
-        if mq.TLO.Plugin('mq2dannet')() == nil then
-        ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
-                HelpMarker('DanNet Disabled. You must load the plugin DanNet for this function to work')
-            end
-            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == nil then
+            if not pause_switch then
+                if ImGui.Button(ICONS.MD_PAUSE_CIRCLE_FILLED) then
+                    pause_switch = true
+                end
                 ImGui.SameLine()
-                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
-                HelpMarker('You have DanNet running, but not dannet_load=true in your Easy.ini file')
-            end
-            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == false then
+                HelpMarker("Pause all actions of the script")
                 ImGui.SameLine()
-                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
-                HelpMarker('DanNet = false (This must be set to TRUE when using DanNet')
+                if ImGui.Button(ICONS.MD_STOP) then
+                    mq.cmd('/lua stop easy')
+                end
+                HelpMarker("End Script")
+                ImGui.SameLine()
+                ImGui.Text("Status: ")
+                ImGui.SameLine()
+                ImGui.TextColored(0,1,0,1,"[ RUNNING ]")
+                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+                    ImGui.SameLine()
+                    if pause_switch_all then
+                        if ImGui.Button(ICONS.MD_PLAYLIST_PLAY) then
+                            mq.cmd('/dgex /lua pause easy')
+                            pause_switch_all = false
+                        end
+                        HelpMarker("Start will resume all actions of the script on toons connected to DanNet")
+                        ImGui.SameLine()
+                        ImGui.Text("Status: ")
+                        ImGui.SameLine()
+                        ImGui.TextColored(1,1,0,1,"[ PEERS PAUSED ]")
+                        ImGui.Separator()
+                    end
+                    ImGui.SameLine()
+                    if not pause_switch_all then
+                        ImGui.SameLine()
+                        if ImGui.Button(ICONS.FA_PAUSE_CIRCLE_O) then
+                            mq.cmd('/dgex /lua pause easy')
+                            pause_switch_all = true
+                        end
+                        HelpMarker("Pause all actions of the script on all toons connected to DanNet")                       
+                        ImGui.SameLine()
+                        if ImGui.Button(ICONS.FA_STOP) then
+                            mq.cmd('/dgex /lua stop easy')
+                        end
+                        ImGui.SameLine()
+                        HelpMarker("End Script on All Toons connected to DanNet")
+                        ImGui.SameLine()
+                        ImGui.Text("Status: ")
+                        ImGui.SameLine()
+                        ImGui.TextColored(0,1,0,1,"[ PEERS RUNNING ]")
+                    end
+                end
+            end
+            ImGui.Separator()
+            ImGui.Text("Sub:")
+            ImGui.SameLine()
+            if mq.TLO.Me.Subscription() == "GOLD" then
+                ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.Me.Subscription() .. " ]")
+            elseif mq.TLO.Me.Subscription() == "SILVER" then
+                ImGui.TextColored(0.6, 0.6, 0, 1,"[ " .. mq.TLO.Me.Subscription() .. " ]")
+            elseif mq.TLO.Me.Subscription() == "FREE" then
+                ImGui.TextColored(0.95, 0.05, 0.05, 0.95,"[ " .. mq.TLO.Me.Subscription() .. " ]")
             end
             ImGui.SameLine()
-            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
-        while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount() ~= peerCountDanNet do
-            peerCountDanNet = mq.TLO.DanNet.PeerCount()
-            break
-        end
-        zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
-        while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() ~= zonePeerCount do
-            if INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
-                zonePeerCount = (string.format('zone_%s', mq.TLO.Zone.ShortName()))
+            ImGui.Text("Days Left:")
+            ImGui.SameLine()
+            if mq.TLO.Me.SubscriptionDays() ~= nil then
+                if mq.TLO.Me.SubscriptionDays() > 7 then
+                    ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.Me.SubscriptionDays() .. " ]")
+                elseif mq.TLO.Me.SubscriptionDays() < 8 and mq.TLO.Me.SubscriptionDays() > 3 then
+                    ImGui.TextColored(0.6, 0.6, 0, 1,"[ " .. mq.TLO.Me.SubscriptionDays() .. " ]")
+                elseif mq.TLO.Me.SubscriptionDays() < 4 then
+                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.SubscriptionDays() .. " ]")
+                end
             end
-            if not INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
-                zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+            ImGui.SameLine()
+            ImGui.Text("Krono:")
+            ImGui.SameLine()
+            local me_krono = mq.TLO.Me.Krono() or 0
+                if me_krono >= 5 then
+                    ImGui.TextColored(0,1,0,1,"[ " ..  me_krono .. " ]")
+                elseif me_krono <= 4 and  me_krono >= 2 then
+                    ImGui.TextColored(0.6, 0.6, 0, 1,"[ " ..  me_krono .. " ]")
+                elseif me_krono <= 1 then
+                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " ..  me_krono .. " ]")
+                end
+            ImGui.SameLine()
+            ImGui.Text("Own:")
+            ImGui.SameLine()
+            ImGui.TextColored(1, 1, .5, 1,"[ " .. expansion_owned .. " ]")
+            ImGui.Separator()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_EYE)
+            HelpMarker('Invisible to Undead')
+            ImGui.SameLine()
+            ImGui.Text("IVU:")
+            ImGui.SameLine()
+            if mq.TLO.Me.Invis('UNDEAD')() then
+                ImGui.TextColored(0,1,0,1,"[ " .. Invis_IVU_Status .. " ]")
+            elseif not mq.TLO.Me.Invis('UNDEAD')() then
+                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Invis_IVU_Status .. " ]")
             end
-            break
-        end
-        if peerCountDanNet > 0 then
-            ImGui.TextColored(0,1,0,1,"[ " .. peerCountDanNet .. " ]")
-            HelpMarker('Total Peers.')
+            ImGui.SameLine() ImGui.Text('|')
+            ImGui.SameLine()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_STREET_VIEW)
+            HelpMarker('Rooted')
+            ImGui.SameLine()
+            ImGui.Text("Root:")
+            ImGui.SameLine()
+            if mq.TLO.Me.Rooted() then
+                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Root_Status .. " ]")
+            elseif not mq.TLO.Me.Rooted() then
+                ImGui.TextColored(0, 1, 0, 1,"[ " .. Root_Status .. " ]")
+            end
+            ImGui.SameLine() ImGui.Text('|')
+            ImGui.SameLine()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_DIRECTIONS_WALK)
+            HelpMarker('Snared')
+            ImGui.SameLine()
+            ImGui.Text("Snare:")
+            ImGui.SameLine()
+            if mq.TLO.Me.Snared() then
+                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Snare_Status .. " ]")
+            elseif not mq.TLO.Me.Snared() then
+                ImGui.TextColored(0, 1, 0, 1,"[ " .. Snare_Status .. " ]")
+            end
+            ImGui.SameLine() ImGui.Text('|')
+            ImGui.SameLine()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_CLOUD)
+            HelpMarker('Levitating')
+            ImGui.SameLine()
+            ImGui.Text("Levi:")
+            ImGui.SameLine()
+            if mq.TLO.Me.Levitating() then
+                ImGui.TextColored(0, 1, 0, 1,"[ " .. Levitate_Status .. " ]")
+            elseif not mq.TLO.Me.Levitating() then
+                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. Levitate_Status .. " ]")
+            end
+            ImGui.Separator()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_PERSON)
+            ImGui.SameLine()
+            local pcs = mq.TLO.SpawnCount('pc')() - mq.TLO.SpawnCount('guild pc')()
+            HelpMarker('Other Players | Guild Members in Zone.')
+            ImGui.SameLine()
+            if pcs > 50 then
+                ImGui.TextColored(0.95, 0.05, 0.05, 1, '[ '..tostring(pcs)..' ]')
+            elseif pcs > 24 then
+                ImGui.TextColored(0.6, 0.6, 0, 1, '[ '..tostring(pcs)..' ]')
+            elseif pcs > 0 then
+                ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..tostring(pcs)..' ]')
+            elseif pcs == 0 then
+                ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..tostring(pcs)..' ]')
+            else
+                ImGui.TextDisabled(tostring(pcs))
+            end
+            HelpMarker('Other Players in Zone.')
             ImGui.SameLine()
             ImGui.Text('|')
             ImGui.SameLine()
-            ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() .. " ]")
-            HelpMarker('Total Peers in Zone.')
-        end
-    end
-        ImGui.SameLine() ImGui.Text('|')
-        ImGui.SameLine()
-        ImGui.TextColored(0, 1, 1, 1, ICONS.MD_REMOVE_RED_EYE)
-        HelpMarker('Group Member Invis Status - F1 is You')
-        ImGui.SameLine() ImGui.TextDisabled('|')
-        if mq.TLO.Group() ~= nil then
-            for i = 0, mq.TLO.Group.Members() do
-                local member = mq.TLO.Group.Member(i)
-                if member.Present() and not member.Mercenary() then
+            ImGui.TextColored(0.05, 0.95, 0.05, 1, '[ '..mq.TLO.SpawnCount('guild pc')()..' ]')
+            HelpMarker('Guild Members in Zone.')
+            ImGui.SameLine() ImGui.Text('|')
+            ImGui.SameLine()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_PERSON_OUTLINE)
+            HelpMarker('Total Peers and Peers in Zone.')
+            if mq.TLO.Plugin('mq2dannet')() == nil then
+            ImGui.SameLine()
+                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
+                    HelpMarker('DanNet Disabled. You must load the plugin DanNet for this function to work')
+                end
+                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == nil then
                     ImGui.SameLine()
-                    if not member.Invis() then
-                        ImGui.TextColored(0.95, 0.05, 0.05, 1, 'F'..i+1)
-                    elseif member.Invis('NORMAL')() then
-                        ImGui.TextColored(0.05, 0.95, 0.05, 1, 'F'..i+1)
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
+                    HelpMarker('You have DanNet running, but not dannet_load=true in your Easy.ini file')
+                end
+                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == false then
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.MD_ERROR)
+                    HelpMarker('DanNet = false (This must be set to TRUE when using DanNet')
+                end
+                ImGui.SameLine()
+                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+            while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount() ~= peerCountDanNet do
+                peerCountDanNet = mq.TLO.DanNet.PeerCount()
+                break
+            end
+            zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+            while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() ~= zonePeerCount do
+                if INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
+                    zonePeerCount = (string.format('zone_%s', mq.TLO.Zone.ShortName()))
+                end
+                if not INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
+                    zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+                end
+                break
+            end
+            if peerCountDanNet > 0 then
+                ImGui.TextColored(0,1,0,1,"[ " .. peerCountDanNet .. " ]")
+                HelpMarker('Total Peers.')
+                ImGui.SameLine()
+                ImGui.Text('|')
+                ImGui.SameLine()
+                ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() .. " ]")
+                HelpMarker('Total Peers in Zone.')
+            end
+            end
+            ImGui.SameLine() ImGui.Text('|')
+            ImGui.SameLine()
+            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_REMOVE_RED_EYE)
+            HelpMarker('Group Member Invis Status - F1 is You')
+            ImGui.SameLine() ImGui.TextDisabled('|')
+            if mq.TLO.Group() ~= nil then
+                for i = 0, mq.TLO.Group.Members() do
+                    local member = mq.TLO.Group.Member(i)
+                    if member.Present() and not member.Mercenary() then
+                        ImGui.SameLine()
+                        if not member.Invis() then
+                            ImGui.TextColored(0.95, 0.05, 0.05, 1, 'F'..i+1)
+                        elseif member.Invis('NORMAL')() then
+                            ImGui.TextColored(0.05, 0.95, 0.05, 1, 'F'..i+1)
+                        end
+                        ImGui.SameLine() ImGui.TextDisabled('|')
                     end
-                    ImGui.SameLine() ImGui.TextDisabled('|')
                 end
             end
-        end
-        if mq.TLO.Group() == nil and mq.TLO.Me.Invis() then
-            ImGui.SameLine()
-            ImGui.TextColored(0.05, 0.95, 0.05, 1, 'F1')
-            ImGui.SameLine() ImGui.TextDisabled('|')
-        end
-        if mq.TLO.Group() == nil and not mq.TLO.Me.Invis() then
-            ImGui.SameLine()
-            ImGui.TextColored(0.95, 0.05, 0.05, 1, 'F1')
-            ImGui.SameLine() ImGui.TextDisabled('|')
-        end
-        if mq.TLO.Me.Thirst() ~= nil then
-            ImGui.Separator()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_LOCAL_DRINK)
-            ImGui.SameLine()
-            ImGui.Text("Thirst:")
-            ImGui.SameLine()
-            if mq.TLO.Me.Thirst() < 500 then
-                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Thirst() .. " ]")
-            else
-                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Thirst() .. " ]")
-            end
-        end
-        if mq.TLO.Me.Hunger() ~= nil then
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_LOCAL_DINING)
-            ImGui.SameLine()
-            ImGui.Text("Hunger:")
-            ImGui.SameLine()
-            if mq.TLO.Me.Hunger() < 500 then
-                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Hunger() .. " ]")
-            else
-                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Hunger() .. " ]")
-            end
-        end
-        if mq.TLO.Me.Drunk() ~= nil then
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_GLASS)
-            ImGui.SameLine()
-            ImGui.Text("Drunk:")
-            ImGui.SameLine()
-            if mq.TLO.Me.Drunk() > 0 then
-                ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Drunk() .. " ]")
-            else
-                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Drunk() .. " ]")
-            end
-        end
-        if mq.TLO.Me.Fellowship.Campfire() ~= nil then
-            ImGui.Separator()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_FREE_CODE_CAMP)
-            HelpMarker('Campfire Location')
-            ImGui.SameLine()
-            if mq.TLO.Me.Fellowship.CampfireZone() then
-                ImGui.TextColored(1, 1, .5, 1,"[ " .. CampFireZone .. " ]")
-            else
-                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. CampFireZone .. " ]")
-            end
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_AV_TIMER)
-            HelpMarker('Time Remaining on Campfire')
-        end
-        if mq.TLO.GameTime.Hour() ~= nil then
-            ImGui.SameLine()
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " .. CampfireDuration/60 .. " ]")
-            ImGui.SameLine() ImGui.Text('||')
-            local hour = mq.TLO.GameTime.Hour()
-            if hour >= 19 or hour < 6 then
+            if mq.TLO.Group() == nil and mq.TLO.Me.Invis() then
                 ImGui.SameLine()
-                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_MOON_O)
-            else
+                ImGui.TextColored(0.05, 0.95, 0.05, 1, 'F1')
+                ImGui.SameLine() ImGui.TextDisabled('|')
+            end
+            if mq.TLO.Group() == nil and not mq.TLO.Me.Invis() then
                 ImGui.SameLine()
-                ImGui.TextColored(1, 0.85, 0, 1, ICONS.MD_WB_SUNNY)
+                ImGui.TextColored(0.95, 0.05, 0.05, 1, 'F1')
+                ImGui.SameLine() ImGui.TextDisabled('|')
             end
-            HelpMarker('Norrath Time')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " .. timeDisplayNorrath .. " ]")
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_GLOBE)
-            HelpMarker('Earth Time')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " .. timeDisplayEarth .. " ]")
-        end
-            ImGui.Separator()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_BATTERY_CHARGING_FULL)
-            HelpMarker('Power Source')
-            ImGui.SameLine()
-            if mq.TLO.Me.Inventory('21')() ~= nil then
-                if MySource == nil then
-                    MySource = 'NONE'
-                end
-                ImGui.TextColored(1, 1, .5, 1,"[ " .. MySource .. " ]")
-            else
-                if MySource == nil then
-                    MySource = 'NONE'
-                end
-                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySource .. " ]")
-            end
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_INFO_CIRCLE)
-            HelpMarker('Power Source Count In Inventory')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " ..MySourceCount .. " ]")
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            if MySourcePower == nil then
-                MySourcePower = 1000*0
-            end
-            if MySourcePower == 0 then
-                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_EMPTY)
-            end
-            if MySourcePower ~= nil and MySourcePower > 0 and MySourcePower < 500 then
-                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_QUARTER)
-            end
-            if MySourcePower ~= nil and MySourcePower > 499 and MySourcePower < 1000 then
-                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_HALF)
-            end
-            if MySourcePower ~= nil and MySourcePower > 999 and MySourcePower < 1500 then
-            ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_THREE_QUARTERS)
-            end
-            if MySourcePower ~= nil and MySourcePower > 1500 then
-                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_FULL)
-                end
-            HelpMarker('Power Remaining')
-            ImGui.SameLine()
-            
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySourcePower/1000 .. " ]")
-            ImGui.SameLine() ImGui.Text('|')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 1, 1, 1, ICONS.MD_POWER)
-            HelpMarker('Total Power Remaining On All Power Sources In Inventory')
-            ImGui.SameLine()
-            ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySourcePower*MySourceCount/1000 .. " ]")
-            if nil ~= mq.TLO.Macro() then
+            if mq.TLO.Me.Thirst() ~= nil then
                 ImGui.Separator()
-                ImGui.Text("Running Macro:")
+                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_LOCAL_DRINK)
                 ImGui.SameLine()
-                ImGui.TextColored(0,1,0,1,"[ " .. Macro .. " ]")
+                ImGui.Text("Thirst:")
                 ImGui.SameLine()
-                if not mq.TLO.Macro.Paused() then
-                    if ImGui.Button('Pause') then
-                        mq.cmd('/mqp')
-                        HelpMarker("Pause Macro")
-                    end
-                end
-                if mq.TLO.Macro.Paused() then
-                    if ImGui.Button('Resume') then
-                        mq.cmd('/mqp')
-                        HelpMarker("Resume Macro")
-                    end
-                end
-                ImGui.SameLine()
-                if ImGui.Button('End') then
-                    mq.cmd('/end')
-                    HelpMarker("End Macro")
-                end
-            end
-            local uihelpers = {}
-            uihelpers.DrawInfoBar = function(ratio, text, width, height, barColor)
-                height = height or 20
-                width = width or -1
-                if nil ~= barColor then
-                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, barColor[1] or 0, barColor[2] or 0, barColor[3] or 0, barColor[4] or 1)
+                if mq.TLO.Me.Thirst() < 500 then
+                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Thirst() .. " ]")
                 else
-                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, 1 - ratio, ratio, 0, 0.5)
-                end
-                ImGui.PushStyleColor(ImGuiCol.Text, 0, 0, 0, 1)
-                ImGui.ProgressBar(ratio, width, height, text)
-                ImGui.PopStyleColor(2)
-            end
-            if pause_switch == false and gm_switch == true then
-                if mq.TLO.SpawnCount("GM")() > 0 then
-                    uihelpers.DrawInfoBar(100, "> > GM > > "..ICONS.MD_WARNING.." > > GM > >"..ICONS.MD_ERROR.." WARNING ALERT "..ICONS.MD_ERROR.."< < GM < < "..ICONS.MD_WARNING.." < < GM < <")
-                    if mq.TLO.SpawnCount("GM")() > 0 then
-                        mq.cmd('/beep')
-                        if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
-                        mq.cmd('/noparse /dgza /docommand /${Me.Class.ShortName} mode 0')
-                            print(easy, ' GM Alert: \aySetting all toons using CWTN to Manual Mode')
-                        end
-                            mq.cmd('/say AFK BRB')
-                        pause_switch = true
-                        gm_switch = true
-                    end
+                    ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Thirst() .. " ]")
                 end
             end
-            if gm_switch == true then
-                uihelpers.DrawInfoBar(100, "> > GM > > "..ICONS.MD_WARNING.." > > GM > >"..ICONS.MD_ERROR.." WARNING ALERT "..ICONS.MD_ERROR.."< < GM < < "..ICONS.MD_WARNING.." < < GM < <")
+            if mq.TLO.Me.Hunger() ~= nil then
+                ImGui.SameLine() ImGui.Text('|')
+                ImGui.SameLine()
+                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_LOCAL_DINING)
+                ImGui.SameLine()
+                ImGui.Text("Hunger:")
+                ImGui.SameLine()
+                if mq.TLO.Me.Hunger() < 500 then
+                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Hunger() .. " ]")
+                else
+                    ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Hunger() .. " ]")
+                end
             end
-            ImGui.Separator()
-            if ImGui.BeginTabBar('Main', ImGuiTabBarFlags.Reorderable) then
-                ImGui.PushStyleColor(ImGuiCol.TabActive, 0, 0, 0, 0.25)
-                -- Start Options Tab
-                ImGui.PushID('Options')
-                if ImGui.BeginTabItem('Options') then
-                    HelpMarker('Selected options will activate if all requirements are met.')
-                    ImGui.BeginTable("Script Options",3)
-                    for _, value in ipairs(options) do
-                        ImGui.TableNextColumn()
-                        value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
-                    end
-                    ImGui.EndTable()
-                    ImGui.EndTabItem()
-                end
-                ImGui.PopID()
-                -- Start Camp Tab
-                ImGui.PushID('Camp')
-                if ImGui.BeginTabItem('Camp') then
-                    HelpMarker('Selected options will activate if all requirements are met.')
-                    ImGui.BeginTable("Script Options",3)
-                    for _, value in ipairs(campoptions) do
-                        ImGui.TableNextColumn()
-                        value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
-                    end
-                    ImGui.EndTable()
-                    if ImGui.CollapsingHeader('Custom Distance Settings') then
-                        HelpMarker('Distance to Scoot, Alert or Assist when Selected')
-                        ImGui.BeginTable("Notify Distance Settings",1)
-                        ImGui.TableNextColumn()
-                        ImGui.Text('Scoot Camp Trigger Distance:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.SCOOT_DISTANCE, _ = ImGui.SliderInt('##SliderInt_Scoot', defaults.SCOOT_DISTANCE, 1, 1000, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.SCOOT_DISTANCE, _ = ImGui.InputInt('##inputint###inputstandard_Scoot', defaults.SCOOT_DISTANCE, 1, 1000, ImGuiInputTextFlags.None)
-                        if defaults.SCOOT_DISTANCE < 1 then defaults.SCOOT_DISTANCE = 1 end
-                        if defaults.SCOOT_DISTANCE > 1000 then defaults.SCOOT_DISTANCE = 1000 end
-                        HelpMarker('Scoot Camp if PC within this Distance')
-                        ImGui.Text('Alert PC Trigger Distance:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.ALERT_DISTANCE, _ = ImGui.SliderInt('##SliderInt_Alert ', defaults.ALERT_DISTANCE, 1, 1000, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.ALERT_DISTANCE, _ = ImGui.InputInt('##inputint###inputstandard_Alert', defaults.ALERT_DISTANCE, 1, 1000, ImGuiInputTextFlags.None)
-                        if defaults.ALERT_DISTANCE < 1 then defaults.ALERT_DISTANCE = 1 end
-                        if defaults.ALERT_DISTANCE > 1000 then defaults.ALERT_DISTANCE = 1000 end
-                        HelpMarker('Alert if PC within this Distance')
-                        ImGui.Text('Call for Toon Assist:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.TOON_ASSIST_PCT_ON, _ = ImGui.SliderInt('##SliderInt_On ', defaults.TOON_ASSIST_PCT_ON, 1, 100, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.TOON_ASSIST_PCT_ON, _ = ImGui.InputInt('##inputint###inputstandard_AssistOn', defaults.TOON_ASSIST_PCT_ON, 1, 100, ImGuiInputTextFlags.None)
-                        if defaults.TOON_ASSIST_PCT_ON < 1 then defaults.TOON_ASSIST_PCT_ON = 1 end
-                        if defaults.TOON_ASSIST_PCT_ON > 100 then defaults.TOON_ASSIST_PCT_ON = 100 end
-                        HelpMarker('Mob % HP to call toon assist')
-                        ImGui.Text('Stop Call for Toon Assist:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.TOON_ASSIST_PCT_OFF, _ = ImGui.SliderInt('##SliderInt_Off ', defaults.TOON_ASSIST_PCT_OFF, 1, 100, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.TOON_ASSIST_PCT_OFF, _ = ImGui.InputInt('##inputint###inputstandard_AssistOff', defaults.TOON_ASSIST_PCT_OFF, 1, 100, ImGuiInputTextFlags.None)
-                        if defaults.TOON_ASSIST_PCT_OFF < 1 then defaults.TOON_ASSIST_PCT_OFF = 1 end
-                        if defaults.TOON_ASSIST_PCT_OFF > 100 then defaults.TOON_ASSIST_PCT_OFF = 100 end
-                        HelpMarker('Mob % HP to stop calling toon assist')
-                        ImGui.EndTable()
-                    end
-                    ImGui.EndTabItem()
-                end
-                ImGui.PopID()
-                -- Start Merc Tab
-                ImGui.PushID('Merc')
-                if ImGui.BeginTabItem('Merc') then
-                    HelpMarker('Mercenary Options.')
-                    ImGui.BeginTable("Merc Options",3)
-                    for _, value in ipairs(mercoptions) do
-                        ImGui.TableNextColumn()
-                        value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
-                    end
-                    ImGui.EndTable()
-                    ImGui.Separator()
-                    if mq.TLO.Me.Mercenary.CleanName() ~= nil then
-                        ImGui.Text("Mercenary:")
-                        ImGui.SameLine()
-                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Me.Mercenary.CleanName() .. " ]")
-                        ImGui.SameLine()
-                        ImGui.Text("Class:")
-                        ImGui.SameLine()
-                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Me.Mercenary.Class() .. " ]")
-                        ImGui.SameLine()
-                        ImGui.Text("Race:")
-                        ImGui.SameLine()
-                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Me.Mercenary.Race() .. " ]")
-                        ImGui.SameLine()
-                        ImGui.Text("Stance:")
-                        ImGui.SameLine()
-                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Me.Mercenary.Stance() .. " ]")
+                if mq.TLO.Me.Drunk() ~= nil then
+                    ImGui.SameLine() ImGui.Text('|')
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_GLASS)
+                    ImGui.SameLine()
+                    ImGui.Text("Drunk:")
+                    ImGui.SameLine()
+                    if mq.TLO.Me.Drunk() > 0 then
+                        ImGui.TextColored(0.95, 0.05, 0.05, 1,"[ " .. mq.TLO.Me.Drunk() .. " ]")
                     else
-                        ImGui.TextColored(1, 1, .5, 1,"[ You Do Not Have An Active Mercenary ]")
+                        ImGui.TextColored(0, 0.8, 1, 1,"[ " .. mq.TLO.Me.Drunk() .. " ]")
+                    end
+                end
+                if mq.TLO.Me.Fellowship.Campfire() ~= nil then
+                    ImGui.Separator()
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_FREE_CODE_CAMP)
+                    HelpMarker('Campfire Location')
+                    ImGui.SameLine()
+                    if mq.TLO.Me.Fellowship.CampfireZone() ~= nil then
+                        CampFireZone = mq.TLO.Me.Fellowship.CampfireZone() or 'NONE'
+                        ImGui.TextColored(1, 1, .5, 1,"[ " .. CampFireZone .. " ]")
+                    else
+                        ImGui.TextColored(0, 0.8, 1, 1,"[ " .. CampFireZone .. " ]")
+                    end
+                    ImGui.SameLine() ImGui.Text('|')
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.MD_AV_TIMER)
+                    HelpMarker('Time Remaining on Campfire')
+                    ImGui.SameLine()
+                    if mq.TLO.Me.Fellowship.CampfireDuration() ~= nil then
+                        CampFireDuration = mq.TLO.Me.Fellowship.CampfireDuration() or '0'
+                        ImGui.TextColored(1, 1, .5, 1,"[ " .. CampfireDuration/60 .. " ]")
+                    else
+                        ImGui.TextColored(0, 0.8, 1, 1,"[ " .. CampfireDuration .. " ]")
+                    end
+                end
+                if mq.TLO.GameTime.Hour() ~= nil then
+                    ImGui.SameLine() ImGui.Text('||')
+                    local hour = mq.TLO.GameTime.Hour()
+                    if hour >= 19 or hour < 6 then
                         ImGui.SameLine()
-                        if mq.TLO.Mercenary.State() == 'SUSPENDED' and mq.TLO.Window('MMGW_ManageWnd/MMGW_SuspendButton').Enabled() and not mq.TLO.Me.Hovering() and Alive() then
-                            if ImGui.Button ('Revive Mercenary') then
-                                mq.cmd('/nomodkey /notify MMGW_ManageWnd MMGW_SuspendButton LeftMouseUp')
-                                print(easy, ' \agPopping Mercenary')
-                            end
-                        else
-                            ImGui.TextColored(1, 1, .5, 1,"[ Waiting on Revive Timer To Expire ]")
+                        ImGui.TextColored(0, 1, 1, 1, ICONS.FA_MOON_O)
+                    else
+                        ImGui.SameLine()
+                        ImGui.TextColored(1, 0.85, 0, 1, ICONS.MD_WB_SUNNY)
+                    end
+                    HelpMarker('Norrath Time')
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 0.8, 1, 1,"[ " .. timeDisplayNorrath .. " ]")
+                    ImGui.SameLine() ImGui.Text('|')
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_GLOBE)
+                    HelpMarker('Earth Time')
+                    ImGui.SameLine()
+                    ImGui.TextColored(0, 0.8, 1, 1,"[ " .. timeDisplayEarth .. " ]")
+                end
+                ImGui.Separator()
+                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_BATTERY_CHARGING_FULL)
+                HelpMarker('Power Source')
+                ImGui.SameLine()
+                if mq.TLO.Me.Inventory('21')() ~= nil then
+                    if MySource == nil then
+                        MySource = 'NONE'
+                    end
+                    ImGui.TextColored(1, 1, .5, 1,"[ " .. MySource .. " ]")
+                else
+                    if MySource == nil then
+                        MySource = 'NONE'
+                    end
+                    ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySource .. " ]")
+                end
+                ImGui.SameLine() ImGui.Text('|')
+                ImGui.SameLine()
+                ImGui.TextColored(0, 1, 1, 1, ICONS.FA_INFO_CIRCLE)
+                HelpMarker('Power Source Count In Inventory')
+                ImGui.SameLine()
+                ImGui.TextColored(0, 0.8, 1, 1,"[ " ..MySourceCount .. " ]")
+                ImGui.SameLine() ImGui.Text('|')
+                ImGui.SameLine()
+                if MySourcePower == nil then
+                    MySourcePower = 1000*0
+                end
+                if MySourcePower == 0 then
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_EMPTY)
+                end
+                if MySourcePower ~= nil and MySourcePower > 0 and MySourcePower < 500 then
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_QUARTER)
+                end
+                if MySourcePower ~= nil and MySourcePower > 499 and MySourcePower < 1000 then
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_HALF)
+                end
+                if MySourcePower ~= nil and MySourcePower > 999 and MySourcePower < 1500 then
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_THREE_QUARTERS)
+                end
+                if MySourcePower ~= nil and MySourcePower > 1500 then
+                    ImGui.TextColored(0, 1, 1, 1, ICONS.FA_BATTERY_FULL)
+                end
+                HelpMarker('Power Remaining')
+                ImGui.SameLine()
+                
+                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySourcePower/1000 .. " ]")
+                ImGui.SameLine() ImGui.Text('|')
+                ImGui.SameLine()
+                ImGui.TextColored(0, 1, 1, 1, ICONS.MD_POWER)
+                HelpMarker('Total Power Remaining On All Power Sources In Inventory')
+                ImGui.SameLine()
+                ImGui.TextColored(0, 0.8, 1, 1,"[ " .. MySourcePower*MySourceCount/1000 .. " ]")
+                if nil ~= mq.TLO.Macro() then
+                    ImGui.Separator()
+                    ImGui.Text("Running Macro:")
+                    ImGui.SameLine()
+                    ImGui.TextColored(0,1,0,1,"[ " .. Macro .. " ]")
+                    ImGui.SameLine()
+                    if not mq.TLO.Macro.Paused() then
+                        if ImGui.Button('Pause') then
+                            mq.cmd('/mqp')
+                            HelpMarker("Pause Macro")
                         end
                     end
-                    ImGui.EndTabItem()
+                    if mq.TLO.Macro.Paused() then
+                        if ImGui.Button('Resume') then
+                            mq.cmd('/mqp')
+                            HelpMarker("Resume Macro")
+                        end
+                    end
+                    ImGui.SameLine()
+                    if ImGui.Button('End') then
+                        mq.cmd('/end')
+                        HelpMarker("End Macro")
+                    end
                 end
-                ImGui.PopID()
-                -- Start Class Tab
-                ImGui.PushID('Class')
-                if ImGui.BeginTabItem('Class') then
-                    HelpMarker('Class Options.')
-                    ImGui.BeginTable("Class Options",3)
-                    for _, value in ipairs(classoptions) do
-                        ImGui.TableNextColumn()
-                        value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                local uihelpers = {}
+                uihelpers.DrawInfoBar = function(ratio, text, width, height, barColor)
+                    height = height or 20
+                    width = width or -1
+                    if nil ~= barColor then
+                        ImGui.PushStyleColor(ImGuiCol.PlotHistogram, barColor[1] or 0, barColor[2] or 0, barColor[3] or 0, barColor[4] or 1)
+                    else
+                        ImGui.PushStyleColor(ImGuiCol.PlotHistogram, 1 - ratio, ratio, 0, 0.5)
                     end
+                    ImGui.PushStyleColor(ImGuiCol.Text, 0, 0, 0, 1)
+                    ImGui.ProgressBar(ratio, width, height, text)
+                    ImGui.PopStyleColor(2)
+                end
+                if pause_switch == false and gm_switch == true then
+                    if mq.TLO.SpawnCount("GM")() > 0 then
+                        uihelpers.DrawInfoBar(100, "> > GM > > "..ICONS.MD_WARNING.." > > GM > >"..ICONS.MD_ERROR.." WARNING ALERT "..ICONS.MD_ERROR.."< < GM < < "..ICONS.MD_WARNING.." < < GM < <")
+                        if mq.TLO.SpawnCount("GM")() > 0 then
+                            mq.cmd('/beep')
+                            if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+                            mq.cmd('/noparse /dgza /docommand /${Me.Class.ShortName} mode 0')
+                                print(easy, ' GM Alert: \aySetting all toons using CWTN to Manual Mode')
+                            end
+                                mq.cmd('/say AFK BRB')
+                            pause_switch = true
+                            gm_switch = true
+                        end
+                    end
+                end
+                if gm_switch == true then
+                    uihelpers.DrawInfoBar(100, "> > GM > > "..ICONS.MD_WARNING.." > > GM > >"..ICONS.MD_ERROR.." WARNING ALERT "..ICONS.MD_ERROR.."< < GM < < "..ICONS.MD_WARNING.." < < GM < <")
+                end
+
+----------------------------------------------------------------------------------------------------------------
+------ MEAT AND POTATOES OF THE GUI ----------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+
+            ImGui.Separator()
+            if ImGui.BeginTabBar('Options', ImGuiTabBarFlags.Reorderable) then
+            if ImGui.BeginTabItem('Basic Options') then
+                ImGui.BeginTable("Basic Options",2)
+                for _, value in ipairs(options) do
+                    ImGui.TableNextColumn()
+                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                end
+                ImGui.EndTable()
+                ImGui.EndTabItem()
+            end
+            if ImGui.BeginTabItem('Camp Options') then
+                ImGui.BeginTable("Camp Options",2)
+                for _, value in ipairs(campoptions) do
+                    ImGui.TableNextColumn()
+                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                end
+                ImGui.EndTable()
+                if ImGui.CollapsingHeader('Custom Distance Settings') then
+                    HelpMarker('Distance to Scoot, Alert or Assist when Selected')
+                    ImGui.BeginTable("Notify Distance Settings",1)
+                    ImGui.TableNextColumn()
+                    ImGui.Text('Scoot Camp Trigger Distance:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.SCOOT_DISTANCE, _ = ImGui.SliderInt('##SliderInt_Scoot', defaults.SCOOT_DISTANCE, 1, 1000, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.SCOOT_DISTANCE, _ = ImGui.InputInt('##inputint###inputstandard_Scoot', defaults.SCOOT_DISTANCE, 1, 1000, ImGuiInputTextFlags.None)
+                    if defaults.SCOOT_DISTANCE < 1 then defaults.SCOOT_DISTANCE = 1 end
+                    if defaults.SCOOT_DISTANCE > 1000 then defaults.SCOOT_DISTANCE = 1000 end
+                    HelpMarker('Scoot Camp if PC within this Distance')
+                    ImGui.Text('Alert PC Trigger Distance:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.ALERT_DISTANCE, _ = ImGui.SliderInt('##SliderInt_Alert', defaults.ALERT_DISTANCE, 1, 1000, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.ALERT_DISTANCE, _ = ImGui.InputInt('##inputint###inputstandard_Alert', defaults.ALERT_DISTANCE, 1, 1000, ImGuiInputTextFlags.None)
+                    if defaults.ALERT_DISTANCE < 1 then defaults.ALERT_DISTANCE = 1 end
+                    if defaults.ALERT_DISTANCE > 1000 then defaults.ALERT_DISTANCE = 1000 end
+                    HelpMarker('Alert if PC within this Distance')
+                    ImGui.Text('Call for Toon Assist:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.TOON_ASSIST_PCT_ON, _ = ImGui.SliderInt('##SliderInt_On', defaults.TOON_ASSIST_PCT_ON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.TOON_ASSIST_PCT_ON, _ = ImGui.InputInt('##inputint###inputstandard_AssistOn', defaults.TOON_ASSIST_PCT_ON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.TOON_ASSIST_PCT_ON < 1 then defaults.TOON_ASSIST_PCT_ON = 1 end
+                    if defaults.TOON_ASSIST_PCT_ON > 100 then defaults.TOON_ASSIST_PCT_ON = 100 end
+                    HelpMarker('Mob % HP to call toon assist')
+                    ImGui.Text('Stop Call for Toon Assist:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.TOON_ASSIST_PCT_OFF, _ = ImGui.SliderInt('##SliderInt_Off', defaults.TOON_ASSIST_PCT_OFF, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.TOON_ASSIST_PCT_OFF, _ = ImGui.InputInt('##inputint###inputstandard_AssistOff', defaults.TOON_ASSIST_PCT_OFF, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.TOON_ASSIST_PCT_OFF < 1 then defaults.TOON_ASSIST_PCT_OFF = 1 end
+                    if defaults.TOON_ASSIST_PCT_OFF > 100 then defaults.TOON_ASSIST_PCT_OFF = 100 end
+                    HelpMarker('Mob % HP to stop calling toon assist')
+                    ImGui.PopItemWidth()
                     ImGui.EndTable()
-                    if ImGui.CollapsingHeader('Custom Burn Settings') then
-                        HelpMarker('Mob PCT to Start and Stop Burn')
-                        ImGui.BeginTable("Start Burn",1)
-                        ImGui.TableNextColumn()
-                        ImGui.Text('Mob HP PCT to Start Burn:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.START_BURN, _ = ImGui.SliderInt('##SliderInt_BurnOn', defaults.START_BURN, 1, 100, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.START_BURN, _ = ImGui.InputInt('##inputint###inputstandard_StartBurn', defaults.START_BURN, 1, 100, ImGuiInputTextFlags.None)
-                        if defaults.START_BURN < 1 then defaults.START_BURN = 1 end
-                        if defaults.START_BURN > 100 then defaults.START_BURN = 100 end
-                        HelpMarker('Start Burn When Mobs Hits This PCT HP')
-                        ImGui.Text('Mob HP PCT to Stop Burn:')
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(100)
-                        defaults.STOP_BURN, _ = ImGui.SliderInt('##SliderInt_BurnOff', defaults.STOP_BURN, 1, 100, "%d")
-                        ImGui.SameLine()
-                        ImGui.PushItemWidth(1)
-                        defaults.STOP_BURN, _ = ImGui.InputInt('##inputint###inputstandard_StopBurn', defaults.STOP_BURN, 1, 100, ImGuiInputTextFlags.None)
-                        if defaults.STOP_BURN < 1 then defaults.STOP_BURN = 1 end
-                        if defaults.STOP_BURN > 100 then defaults.STOP_BURN = 100 end
-                        HelpMarker('Stop Burn When Mob Hits This PCT HP')
-                        ImGui.EndTable()
-                    end
-                    ImGui.EndTabItem()
-                    end
-                    ImGui.PopID()
-                    --- Account
-                    ImGui.PushID('Account')
-                    if ImGui.BeginTabItem('Account') then
-                        if Alive() then
+                end
+                ImGui.EndTabItem()
+            end
+            
+            if ImGui.BeginTabItem('Merc Options') then
+                ImGui.BeginTable("Merc Options",2)
+                for _, value in ipairs(mercoptions) do
+                    ImGui.TableNextColumn()
+                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                end
+                ImGui.EndTable()
+                ImGui.EndTabItem()
+            end
+            if ImGui.BeginTabItem('Clicky Options') then
+                ImGui.BeginTable("Clicky Options",2)
+                for _, value in ipairs(itemoptions) do
+                    ImGui.TableNextColumn()
+                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                end
+                ImGui.EndTable()
+                if ImGui.CollapsingHeader('Custom Clicky Settings') then
+                    HelpMarker('Quantity to Summon')
+                    ImGui.BeginTable("Custom Clicky Settings",1)
+                    HelpMarker('Requires Clickies')
+                    ImGui.TableNextColumn()
+                    ------ Cookies
+                    ImGui.Text('Cookies:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.COOKIES_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Cookies', defaults.COOKIES_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.COOKIES_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Cookies', defaults.COOKIES_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.COOKIES_TO_SUMMON < 1 then defaults.COOKIES_TO_SUMMON = 0 end
+                    if defaults.COOKIES_TO_SUMMON > 100 then defaults.COOKIES_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Cookies to Summon')
+                    ImGui.SameLine()
+                    local cookie_count = mq.TLO.FindItemCount('71980')()
+                    ImGui.Text(string.format('You have (%s) Fresh Cookies', cookie_count))
+                    ------ Tea
+                    ImGui.Text('Tea:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.SPICED_TEA_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Tea', defaults.SPICED_TEA_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.SPICED_TEA_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Tea', defaults.SPICED_TEA_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.SPICED_TEA_TO_SUMMON < 1 then defaults.SPICED_TEA_TO_SUMMON = 0 end
+                    if defaults.SPICED_TEA_TO_SUMMON > 100 then defaults.SPICED_TEA_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Spiced Tea to Summon')
+                    ImGui.SameLine()
+                    local tea_count = mq.TLO.FindItemCount('107807')()
+                    ImGui.Text(string.format('You have (%s) Spiced Tea', tea_count))
+                    ------ Milk
+                    ImGui.Text('Warm Milk:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.WARM_MILK_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Milk', defaults.WARM_MILK_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.WARM_MILK_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Milk', defaults.WARM_MILK_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.WARM_MILK_TO_SUMMON < 1 then defaults.WARM_MILK_TO_SUMMON = 0 end
+                    if defaults.WARM_MILK_TO_SUMMON > 100 then defaults.WARM_MILK_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Warm Milk to Summon')
+                    ImGui.SameLine()
+                    local milk_count = mq.TLO.FindItemCount('52199')()
+                    ImGui.Text(string.format('You have (%s) Warm Milk', milk_count))
+                    ------ Turkey
+                    ImGui.Text('Turkey:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.COOKED_TURKEY_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Turkey', defaults.COOKED_TURKEY_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.COOKED_TURKEY_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Turkey', defaults.COOKED_TURKEY_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.COOKED_TURKEY_TO_SUMMON < 1 then defaults.COOKED_TURKEY_TO_SUMMON = 0 end
+                    if defaults.COOKED_TURKEY_TO_SUMMON > 100 then defaults.COOKED_TURKEY_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Cooked Turkey to Summon')
+                    ImGui.SameLine()
+                    local turkey_count = mq.TLO.FindItemCount('56064')()
+                    ImGui.Text(string.format('You have (%s) Cooked Turkey', turkey_count))
+                    ------ Brells Brew
+                    ImGui.Text('Brew:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.BRELL_ALE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Brells', defaults.BRELL_ALE_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.BRELL_ALE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Brells', defaults.BRELL_ALE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.BRELL_ALE_TO_SUMMON < 1 then defaults.BRELL_ALE_TO_SUMMON = 0 end
+                    if defaults.BRELL_ALE_TO_SUMMON > 100 then defaults.BRELL_ALE_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Brell Day Ale to Summon')
+                    ImGui.SameLine()
+                    local brew_count = mq.TLO.FindItemCount('48994')()
+                    ImGui.Text(string.format('You have (%s) Brell Day Ale', brew_count))
+                    ------ Ale
+                    ImGui.Text('Ale:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.ALE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Ale', defaults.ALE_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.ALE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Ale', defaults.ALE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.ALE_TO_SUMMON < 1 then defaults.ALE_TO_SUMMON = 0 end
+                    if defaults.ALE_TO_SUMMON > 100 then defaults.ALE_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Ale to Summon')
+                    ImGui.SameLine()
+                    local ale_count = mq.TLO.FindItemCount('8991')()
+                    ImGui.Text(string.format('You have (%s) Ale', ale_count))
+                    ------ Bread
+                    ImGui.Text('Bread:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.BURNED_BREAD_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Bread', defaults.BURNED_BREAD_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.BURNED_BREAD_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Bread', defaults.BURNED_BREAD_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.BURNED_BREAD_TO_SUMMON < 1 then defaults.BURNED_BREAD_TO_SUMMON = 0 end
+                    if defaults.BURNED_BREAD_TO_SUMMON > 100 then defaults.BURNED_BREAD_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Bread to Summon')
+                    ImGui.SameLine()
+                    local bread_count = mq.TLO.FindItemCount('85830')()
+                    ImGui.Text(string.format('You have (%s) Burned Bread', bread_count))
+                    ------ Water
+                    ImGui.Text('Water:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.MURKY_GLOBE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Water', defaults.MURKY_GLOBE_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.MURKY_GLOBE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Water', defaults.MURKY_GLOBE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.MURKY_GLOBE_TO_SUMMON < 1 then defaults.MURKY_GLOBE_TO_SUMMON = 0 end
+                    if defaults.MURKY_GLOBE_TO_SUMMON > 100 then defaults.MURKY_GLOBE_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Murky Globes to Summon')
+                    ImGui.SameLine()
+                    local globe_count = mq.TLO.FindItemCount('85829')()
+                    ImGui.Text(string.format('You have (%s) Murky Globes', globe_count))
+                    ImGui.Separator()
+                    ImGui.Text('Packed Picnic Basket Settings')
+                    ImGui.SameLine()
+                    ImGui.Text('(?)')
+                    HelpMarker('Can result in obtaining other items until the amount of items requested is reached.')
+                    ImGui.Separator()
+                    ------ Elven Wine (Packed Picnic Basket)
+                    ImGui.Text('Elven Wine:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.ELVEN_WINE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_ElvenWine', defaults.ELVEN_WINE_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.ELVEN_WINE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_ElvenWine', defaults.ELVEN_WINE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.ELVEN_WINE_TO_SUMMON < 1 then defaults.ELVEN_WINE_TO_SUMMON = 0 end
+                    if defaults.ELVEN_WINE_TO_SUMMON > 100 then defaults.ELVEN_WINE_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Exquisite Elven Wine to Summon')
+                    ImGui.SameLine()
+                    local picnic_count = mq.TLO.FindItemCount('61994')()
+                    ImGui.Text(string.format('You have (%s) Exquisite Elven Wine', picnic_count))
+                    ------ Afternoon Tea (Packed Picnic Basket)
+                    ImGui.Text('Afternoon Tea:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.AFTERNOON_TEA_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_AfternoonTea', defaults.AFTERNOON_TEA_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.AFTERNOON_TEA_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_AfternoonTea', defaults.AFTERNOON_TEA_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.AFTERNOON_TEA_TO_SUMMON < 1 then defaults.AFTERNOON_TEA_TO_SUMMON = 0 end
+                    if defaults.AFTERNOON_TEA_TO_SUMMON > 100 then defaults.AFTERNOON_TEA_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Honeyed Qeynos Afternoon Tea to Summon')
+                    ImGui.SameLine()
+                    local afternoon_tea_count = mq.TLO.FindItemCount('61993')()
+                    ImGui.Text(string.format('You have (%s) Honeyed Qeynos Afternoon Tea', afternoon_tea_count))
+                    ------ Refreshing Milk (Packed Picnic Basket)
+                    ImGui.Text('Refreshing Milk:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.REFRESHING_MILK_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_RefreshingMilk', defaults.REFRESHING_MILK_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.REFRESHING_MILK_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_RefreshingMilk', defaults.REFRESHING_MILK_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.REFRESHING_MILK_TO_SUMMON < 1 then defaults.REFRESHING_MILK_TO_SUMMON = 0 end
+                    if defaults.REFRESHING_MILK_TO_SUMMON > 100 then defaults.REFRESHING_MILK_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Refreshing Milk to Summon')
+                    ImGui.SameLine()
+                    local refreshing_milk_count = mq.TLO.FindItemCount('61992')()
+                    ImGui.Text(string.format('You have (%s) Refreshing Milk', refreshing_milk_count))
+                    ------ Decadent Jumjum Cake (Packed Picnic Basket)
+                    ImGui.Text('Jumjum Cake:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.JUMJUM_CAKE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_JumjumCake', defaults.JUMJUM_CAKE_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.JUMJUM_CAKE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_JumjumCake', defaults.JUMJUM_CAKE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.JUMJUM_CAKE_TO_SUMMON < 1 then defaults.JUMJUM_CAKE_TO_SUMMON = 0 end
+                    if defaults.JUMJUM_CAKE_TO_SUMMON > 100 then defaults.JUMJUM_CAKE_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Decadent Jumjum Cake to Summon')
+                    ImGui.SameLine()
+                    local jumjum_cake_count = mq.TLO.FindItemCount('61997')()
+                    ImGui.Text(string.format('You have (%s) Decadent Jumjum Cake', jumjum_cake_count))
+                    ------ Plump Sylvan Berries (Packed Picnic Basket)
+                    ImGui.Text('Sylvan Berries:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_SylvanBerries', defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_SylvanBerries', defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON < 1 then defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON = 0 end
+                    if defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON > 100 then defaults.PLUMP_SYLVAN_BERRIES_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Plump Sylvan Berries to Summon')
+                    ImGui.SameLine()
+                    local sylvan_berries_count = mq.TLO.FindItemCount('61996')()
+                    ImGui.Text(string.format('You have (%s) Plump Sylvan Berries', sylvan_berries_count))
+                    ------ Spicy Wolf Sandwich (Packed Picnic Basket)
+                    ImGui.Text('Wolf Sandwich:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.SPICY_WOLF_SANDWICH_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_WolfSandwich', defaults.SPICY_WOLF_SANDWICH_TO_SUMMON, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.SPICY_WOLF_SANDWICH_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_WolfSandwich', defaults.SPICY_WOLF_SANDWICH_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.SPICY_WOLF_SANDWICH_TO_SUMMON < 1 then defaults.SPICY_WOLF_SANDWICH_TO_SUMMON = 0 end
+                    if defaults.SPICY_WOLF_SANDWICH_TO_SUMMON > 100 then defaults.SPICY_WOLF_SANDWICH_TO_SUMMON = 100 end
+                    HelpMarker('Quantity of Spicy Wolf Sandwich to Summon')
+                    ImGui.SameLine()
+                    local wolf_sandwich_count = mq.TLO.FindItemCount('61995')()
+                    ImGui.Text(string.format('You have (%s) Spicy Wolf Sandwich', wolf_sandwich_count))
+                    ImGui.PopItemWidth()
+                    ImGui.EndTable()
+                end
+                ImGui.EndTabItem()
+            end
+            if ImGui.BeginTabItem('Class Options') then
+                ImGui.BeginTable("Class Options",2)
+                for _, value in ipairs(classoptions) do
+                    ImGui.TableNextColumn()
+                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
+                end
+                ImGui.EndTable()
+                if ImGui.CollapsingHeader('Custom Burn Settings') then
+                    HelpMarker('Mob PCT to Start and Stop Burn')
+                    ImGui.BeginTable("Start Burn",1)
+                    ImGui.TableNextColumn()
+                    ImGui.Text('Mob HP PCT to Start Burn:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.START_BURN, _ = ImGui.SliderInt('##SliderInt_BurnOn', defaults.START_BURN, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.START_BURN, _ = ImGui.InputInt('##inputint###inputstandard_StartBurn', defaults.START_BURN, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.START_BURN < 1 then defaults.START_BURN = 1 end
+                    if defaults.START_BURN > 100 then defaults.START_BURN = 100 end
+                    HelpMarker('Start Burn When Mobs Hits This PCT HP')
+                    ImGui.Text('Mob HP PCT to Stop Burn:')
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(100)
+                    defaults.STOP_BURN, _ = ImGui.SliderInt('##SliderInt_BurnOff', defaults.STOP_BURN, 1, 100, "%d")
+                    ImGui.SameLine()
+                    ImGui.PushItemWidth(1)
+                    defaults.STOP_BURN, _ = ImGui.InputInt('##inputint###inputstandard_StopBurn', defaults.STOP_BURN, 1, 100, ImGuiInputTextFlags.None)
+                    if defaults.STOP_BURN < 1 then defaults.STOP_BURN = 1 end
+                    if defaults.STOP_BURN > 100 then defaults.STOP_BURN = 100 end
+                    HelpMarker('Stop Burn When Mob Hits This PCT HP')
+                    ImGui.PopItemWidth()
+                    ImGui.EndTable()
+                end
+                ImGui.EndTabItem()
+            end
+            ImGui.EndTabBar()
+        end
+        
+            ImGui.Separator()
+            --- Account
+            if ImGui.CollapsingHeader('Account') then
+                if Alive() then
                         HelpMarker('Display Account Details.')
                         local lastTell = mq.TLO.MacroQuest.LastTell()
                         if lastTell ~= nil then
@@ -8773,266 +9068,12 @@ if Open then
                         ImGui.SameLine()
                         if ImGui.Button('Reset Tracker') then
                             TrackPlat()
+                            ImGui.SameLine() HelpMarker('Restart the plat counter for this session')
                         end
-                        ImGui.SameLine() HelpMarker('Restart the plat counter for this session')
-                        ImGui.EndTabItem()
-                    end
                 end
-                    ImGui.PopID()
-                    --- Zone Info
-                    ImGui.PushID('Zone Info')
-                    if ImGui.BeginTabItem('Zone Info') then
-                        HelpMarker('Display Zone Details.')
-                            if mq.TLO.Zone() ~= nil then
-                                ImGui.Text("Zone:")
-                                ImGui.SameLine()
-                                ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone() .. " ]")
-                                ImGui.SameLine()
-                                ImGui.Text("Short Name:")
-                                ImGui.SameLine()
-                                ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone.ShortName() .. " ]")
-                                ImGui.SameLine()
-                                ImGui.Text("ID:")
-                                ImGui.SameLine()
-                                ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone.ID() .. " ]")
-                                ImGui.Separator()
-                                ImGui.Text("Zone | Guild | Other:")
-                                HelpMarker('Players, Guild and Others in Zone')
-                                ImGui.SameLine()
-                                ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('pc')() .. " ]")
-                                HelpMarker('Players in Zone')
-                                ImGui.SameLine()
-                                ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('guild pc')() .. " ]")
-                                HelpMarker('Guild Members in Zone')
-                                ImGui.SameLine()
-                                ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('pc')() - mq.TLO.SpawnCount('guild pc')() .. " ]")
-                                HelpMarker('Other Players in Zone')
-                                ImGui.SameLine()
-                                ImGui.Text("Peers | Zone")
-                                HelpMarker('Total Peers and Peers in Zone')
-                                ImGui.SameLine()
-                                if mq.TLO.Plugin('mq2dannet')() == nil then
-                                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"DanNet Disabled")
-                                end
-                                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == false then
-                                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"dannet_load = false")
-                                    HelpMarker('dannet_load = false (This must be set to TRUE when using DanNet')
-                                end
-                                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == nil then
-                                    ImGui.TextColored(0.95, 0.05, 0.05, 1,"dannet_load Missing")
-                                    HelpMarker('dannet_load=true is missing from your Easy.ini file, add the setting and restart Easy.lua')
-                                end
-                                if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
-                                while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount() ~= peerCountDanNet do
-                                    peerCountDanNet = mq.TLO.DanNet.PeerCount()
-                                    break
-                                end
-                                zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
-                                while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() ~= zonePeerCount do
-                                    if INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
-                                        zonePeerCount = (string.format('zone_%s', mq.TLO.Zone.ShortName()))
-                                    end
-                                    if not INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
-                                        zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
-                                    end
-                                    break
-                                end
-                                if peerCountDanNet > 0 then
-                                    ImGui.TextColored(0,1,0,1,"[ " .. peerCountDanNet .. " ]")
-                                    HelpMarker('Total Peers connected to DanNet')
-                                    ImGui.SameLine()
-                                    ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() .. " ]")
-                                    HelpMarker('Total Peers in Zone')
-                                end
-                            end
-                                ImGui.Separator()
-                                local ColumnID_Name = 0
-                                local ColumnID_Level = 1
-                                local ColumnID_Class = 2
-                                local ColumnID_Race = 3
-                                local ColumnID_Guild = 4
-                                local ColumnID_Distance = 5
-                                local ColumnID_LOS = 6
-                                local ColumnID_HP = 7
-                                local ColumnID_LOC = 8
-                                if ImGui.BeginTable('Players', 9, ImGuiTableFlags.Resizable + ImGuiTableFlags.Borders) then
-                                    ImGui.TableSetupColumn('Name', (ImGuiTableColumnFlags.DefaultSort + ImGuiTableColumnFlags.WidthFixed), 20.0, ColumnID_Name)
-                                    ImGui.TableSetupColumn('Level', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Level)
-                                    ImGui.TableSetupColumn('Class', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Class)
-                                    ImGui.TableSetupColumn('Race', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Race)
-                                    ImGui.TableSetupColumn('Guild', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Guild)
-                                    ImGui.TableSetupColumn('Distance', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Distance)
-                                    ImGui.TableSetupColumn('LOS', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_LOS)
-                                    ImGui.TableSetupColumn('HP Pct', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_HP)
-                                    ImGui.TableSetupColumn('LOC', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_LOC)
-                                    ImGui.TableHeadersRow()
-                                    ImGui.TableNextRow()
-                                    if Alive() then
-                                    for k = 1, mq.TLO.SpawnCount('pc')() do
-                                        local player = mq.TLO.NearestSpawn(k,'pc')
-                                                ImGui.TableNextRow()
-                                                ImGui.TableNextColumn()
-                                                if player.LineOfSight() then
-                                                textEnabledPC(player.CleanName())
-                                                else
-                                                ImGui.Text(string.format('%s', player.CleanName()))
-                                                end
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%d', player.Level()))
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%s', player.Class.ShortName()))
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%s', player.Race()))
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%s', player.Guild() or 'No Guild'))
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%d', player.Distance()))
-                                                ImGui.TableNextColumn()
-                                                if player.LineOfSight() then
-                                                    ImGui.Text(string.format('%s', ICONS.FA_EYE))
-                                                end
-                                                ImGui.TableNextColumn()
-                                                ImGui.Text(string.format('%d', player.PctHPs()))
-                                                ImGui.TableNextColumn()
-                                                navEnabledPC(player.LocYXZ())
-                                                if not Alive() then
-                                                    break
-                                                end
-                                            end
-                                        end
-                                        ImGui.EndTable()
-                                    end
-                                end
-                                ImGui.EndTabItem()
-                            end
-                            ImGui.PopID()
-                            --- Clickies                                                        
-                            ImGui.PushID('Clickies')
-                            if ImGui.BeginTabItem('Clickies') then
-                                HelpMarker('Use Food and Drink Clickies.')
-                                ImGui.BeginTable("Item Options",3)
-                                for _, value in ipairs(itemoptions) do
-                                    ImGui.TableNextColumn()
-                                    value.selected = ImGui.Checkbox(value.name, value.selected) ImGui.SameLine() HelpMarker(value.helper)
-                                end
-                                ImGui.EndTable()
-                                if ImGui.CollapsingHeader('Custom Clicky Settings') then
-                                    HelpMarker('Quantity to Summon')
-                                    ImGui.BeginTable("Custom Clicky Settings",1)
-                                    HelpMarker('Requires Clickies')
-                                    ImGui.TableNextColumn()
-                                    ImGui.Text('Cookies:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.COOKIES_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Cookies ', defaults.COOKIES_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.COOKIES_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Cookies', defaults.COOKIES_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.COOKIES_TO_SUMMON < 1 then defaults.COOKIES_TO_SUMMON = 1 end
-                                    if defaults.COOKIES_TO_SUMMON > 100 then defaults.COOKIES_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Cookies to Summon')
-                                    ImGui.SameLine()
-                                    local cookie_count = mq.TLO.FindItemCount('71980')()
-                                    ImGui.Text(string.format('You have (%s) Fresh Cookies', cookie_count))
-                                    ImGui.Text('Tea:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.SPICED_TEA_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Tea ', defaults.SPICED_TEA_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.SPICED_TEA_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Tea', defaults.SPICED_TEA_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.SPICED_TEA_TO_SUMMON < 1 then defaults.SPICED_TEA_TO_SUMMON = 1 end
-                                    if defaults.SPICED_TEA_TO_SUMMON > 100 then defaults.SPICED_TEA_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Spiced Tea to Summon')
-                                    ImGui.SameLine()
-                                    local tea_count = mq.TLO.FindItemCount('107807')()
-                                    ImGui.Text(string.format('You have (%s) Spiced Tea', tea_count))
-                                    ImGui.Text('Milk:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.WARM_MILK_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Milk ', defaults.WARM_MILK_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.WARM_MILK_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Milk', defaults.WARM_MILK_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.WARM_MILK_TO_SUMMON < 1 then defaults.WARM_MILK_TO_SUMMON = 1 end
-                                    if defaults.WARM_MILK_TO_SUMMON > 100 then defaults.WARM_MILK_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Warm Milk to Summon')
-                                    ImGui.SameLine()
-                                    local milk_count = mq.TLO.FindItemCount('52199')()
-                                    ImGui.Text(string.format('You have (%s) Warm Milk', milk_count))
-                                    ImGui.Text('Turkey:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.COOKED_TURKEY_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Turkey ', defaults.COOKED_TURKEY_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.COOKED_TURKEY_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Turkey', defaults.COOKED_TURKEY_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.COOKED_TURKEY_TO_SUMMON < 1 then defaults.COOKED_TURKEY_TO_SUMMON = 1 end
-                                    if defaults.COOKED_TURKEY_TO_SUMMON > 100 then defaults.COOKED_TURKEY_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Cooked Turkey to Summon')
-                                    ImGui.SameLine()
-                                    local turkey_count = mq.TLO.FindItemCount('56064')()
-                                    ImGui.Text(string.format('You have (%s) Cooked Turkey', turkey_count))
-                                    ImGui.Text('Brew:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.BRELL_ALE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Brells ', defaults.BRELL_ALE_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.BRELL_ALE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Brells', defaults.BRELL_ALE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.BRELL_ALE_TO_SUMMON < 1 then defaults.BRELL_ALE_TO_SUMMON = 1 end
-                                    if defaults.BRELL_ALE_TO_SUMMON > 100 then defaults.BRELL_ALE_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Brell Day Ale to Summon')
-                                    ImGui.SameLine()
-                                    local brew_count = mq.TLO.FindItemCount('48994')()
-                                    ImGui.Text(string.format('You have (%s) Brell Day Ale', brew_count))
-                                    ImGui.Text('Ale:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.ALE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Brells ', defaults.ALE_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.ALE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Ale', defaults.ALE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.ALE_TO_SUMMON < 1 then defaults.ALE_TO_SUMMON = 1 end
-                                    if defaults.ALE_TO_SUMMON > 100 then defaults.ALE_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Ale to Summon')
-                                    ImGui.SameLine()
-                                    local ale_count = mq.TLO.FindItemCount('8991')()
-                                    ImGui.Text(string.format('You have (%s) Ale', ale_count))
-                                    ImGui.Text('Bread:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.BURNED_BREAD_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Bread ', defaults.BURNED_BREAD_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.BURNED_BREAD_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Bread', defaults.BURNED_BREAD_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.BURNED_BREAD_TO_SUMMON < 1 then defaults.BURNED_BREAD_TO_SUMMON = 1 end
-                                    if defaults.BURNED_BREAD_TO_SUMMON > 100 then defaults.BURNED_BREAD_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Bread to Summon')
-                                    ImGui.SameLine()
-                                    local bread_count = mq.TLO.FindItemCount('85830')()
-                                    ImGui.Text(string.format('You have (%s) Burned Bread', bread_count))
-                                    ImGui.Text('Water:')
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(100)
-                                    defaults.MURKY_GLOBE_TO_SUMMON, _ = ImGui.SliderInt('##SliderInt_Water ', defaults.MURKY_GLOBE_TO_SUMMON, 1, 100, "%d")
-                                    ImGui.SameLine()
-                                    ImGui.PushItemWidth(1)
-                                    defaults.MURKY_GLOBE_TO_SUMMON, _ = ImGui.InputInt('##inputint###inputstandard_Water', defaults.MURKY_GLOBE_TO_SUMMON, 1, 100, ImGuiInputTextFlags.None)
-                                    if defaults.MURKY_GLOBE_TO_SUMMON < 1 then defaults.MURKY_GLOBE_TO_SUMMON = 1 end
-                                    if defaults.MURKY_GLOBE_TO_SUMMON > 100 then defaults.MURKY_GLOBE_TO_SUMMON = 100 end
-                                    HelpMarker('Quantity of Murky Globes to Summon')
-                                    ImGui.SameLine()
-                                    local globe_count = mq.TLO.FindItemCount('85829')()
-                                    ImGui.Text(string.format('You have (%s) Murky Globes', globe_count))
-                                    ImGui.EndTable()
-                                end
-                                ImGui.EndTabItem()
-                            end
-                            ImGui.PopID()
-                            --- Hunter                                                        
-                            ImGui.PushID('Hunter')
-                            if ImGui.BeginTabItem('Hunter') then
+            end
+            --- Hunter                                                        
+            if ImGui.CollapsingHeader('Hunter') then
                                 HelpMarker('Hunter Achievements')
                                 ImGui.BeginTable("Hide Hunter",2)
                                 if not spawned_switch then
@@ -9068,18 +9109,139 @@ if Open then
                                     ImGui.SameLine() HelpMarker('Show All Completed Hunter Mobs')
                                 end
                                 ImGui.EndTable()
-                                ImGui.PopStyleColor()
                                 RenderTitle()
                                 ImGui.Separator()
                                 if curAch.ID then
                                     RenderHunter()
                                 end
-                                ImGui.EndTabItem()
                             end
-                            ImGui.PopID()
+
+                            --- Zone Info
+            if ImGui.CollapsingHeader('Zone Info') then
+                HelpMarker('Display Zone Details.')
+                    if mq.TLO.Zone() ~= nil then
+                        ImGui.Text("Zone:")
+                        ImGui.SameLine()
+                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone() .. " ]")
+                        ImGui.SameLine()
+                        ImGui.Text("Short Name:")
+                        ImGui.SameLine()
+                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone.ShortName() .. " ]")
+                        ImGui.SameLine()
+                        ImGui.Text("ID:")
+                        ImGui.SameLine()
+                        ImGui.TextColored(1, 1, .5, 1,"[ " .. mq.TLO.Zone.ID() .. " ]")
+                        ImGui.Separator()
+                        ImGui.Text("Zone | Guild | Other:")
+                        HelpMarker('Players, Guild and Others in Zone')
+                        ImGui.SameLine()
+                        ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('pc')() .. " ]")
+                        HelpMarker('Players in Zone')
+                        ImGui.SameLine()
+                        ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('guild pc')() .. " ]")
+                        HelpMarker('Guild Members in Zone')
+                        ImGui.SameLine()
+                        ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.SpawnCount('pc')() - mq.TLO.SpawnCount('guild pc')() .. " ]")
+                        HelpMarker('Other Players in Zone')
+                        ImGui.SameLine()
+                        ImGui.Text("Peers | Zone")
+                        HelpMarker('Total Peers and Peers in Zone')
+                        ImGui.SameLine()
+                        if mq.TLO.Plugin('mq2dannet')() == nil then
+                            ImGui.TextColored(0.95, 0.05, 0.05, 1,"DanNet Disabled")
+                        end
+                        if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == false then
+                            ImGui.TextColored(0.95, 0.05, 0.05, 1,"dannet_load = false")
+                            HelpMarker('dannet_load = false (This must be set to TRUE when using DanNet')
+                        end
+                        if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load == nil then
+                            ImGui.TextColored(0.95, 0.05, 0.05, 1,"dannet_load Missing")
+                            HelpMarker('dannet_load=true is missing from your Easy.ini file, add the setting and restart Easy.lua')
+                        end
+                        if mq.TLO.Plugin('mq2dannet')() ~= nil and saved_settings.dannet_load then
+                        while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount() ~= peerCountDanNet do
+                            peerCountDanNet = mq.TLO.DanNet.PeerCount()
+                            break
+                        end
+                        zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+                        while peerCountDanNet > 0 and mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() ~= zonePeerCount do
+                            if INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
+                                zonePeerCount = (string.format('zone_%s', mq.TLO.Zone.ShortName()))
+                            end
+                            if not INSTANCE_ZONE[mq.TLO.Zone.ShortName()] then
+                                zonePeerCount = (string.format('zone_%s_%s', mq.TLO.EverQuest.Server(), mq.TLO.Zone.ShortName()))
+                            end
+                            break
+                        end
+                        if peerCountDanNet > 0 then
+                            ImGui.TextColored(0,1,0,1,"[ " .. peerCountDanNet .. " ]")
+                            HelpMarker('Total Peers connected to DanNet')
+                            ImGui.SameLine()
+                            ImGui.TextColored(0,1,0,1,"[ " .. mq.TLO.DanNet.PeerCount(''..zonePeerCount..'')() .. " ]")
+                            HelpMarker('Total Peers in Zone')
+                        end
+                    end
+                        ImGui.Separator()
+                        local ColumnID_Name = 0
+                        local ColumnID_Level = 1
+                        local ColumnID_Class = 2
+                        local ColumnID_Race = 3
+                        local ColumnID_Guild = 4
+                        local ColumnID_Distance = 5
+                        local ColumnID_LOS = 6
+                        local ColumnID_HP = 7
+                        local ColumnID_LOC = 8
+                        if ImGui.BeginTable('##Players', 9, ImGuiTableFlags.Resizable, 0, ImGuiTableFlags.BordersH * 15, 0.0) then
+                            ImGui.TableSetupColumn('Name', ImGuiTableColumnFlags.DefaultSort, 20.0, ColumnID_Name)
+                            ImGui.TableSetupColumn('Level', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Level)
+                            ImGui.TableSetupColumn('Class', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Class)
+                            ImGui.TableSetupColumn('Race', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Race)
+                            ImGui.TableSetupColumn('Guild', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Guild)
+                            ImGui.TableSetupColumn('Distance', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_Distance)
+                            ImGui.TableSetupColumn('LOS', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_LOS)
+                            ImGui.TableSetupColumn('HP Pct', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_HP)
+                            ImGui.TableSetupColumn('LOC', ImGuiTableColumnFlags.DefaultSort, 0.0, ColumnID_LOC)
+                            ImGui.TableHeadersRow()
+                            ImGui.TableNextRow()
+                            if Alive() then
+                            for k = 1, mq.TLO.SpawnCount('pc')() do
+                                local player = mq.TLO.NearestSpawn(k,'pc')
+                                        ImGui.TableNextRow()
+                                        ImGui.TableNextColumn()
+                                        if player.LineOfSight() then
+                                        textEnabledPC(player.CleanName())
+                                        else
+                                        ImGui.Text(string.format('%s', player.CleanName()))
+                                        end
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%d', player.Level()))
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%s', player.Class.ShortName()))
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%s', player.Race()))
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%s', player.Guild() or 'No Guild'))
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%d', player.Distance()))
+                                        ImGui.TableNextColumn()
+                                        if player.LineOfSight() then
+                                            ImGui.Text(string.format('%s', ICONS.FA_EYE))
+                                        end
+                                        ImGui.TableNextColumn()
+                                        ImGui.Text(string.format('%d', player.PctHPs()))
+                                        ImGui.TableNextColumn()
+                                        navEnabledPC(player.LocYXZ())
+                                        if not Alive() then
+                                            break
+                                        end
+                                    end
+                                end
+                                ImGui.EndTable()
+                            end
+                        end
+            end
                             -- Favorites
-                            ImGui.PushID('Favs')
-                            if ImGui.BeginTabItem('Favs') then
+                            if ImGui.CollapsingHeader('Favs') then
                                 HelpMarker('Can only run One Macro at a time')
                                 ImGui.BeginTable("FavoriteMacros",3)
                                 ImGui.TableNextColumn() if ImGui.Button('Block Spells') then block_spells() end ImGui.SameLine() HelpMarker('Adds Mod Rod and Summoned Food and Drink to Blocked Spell List.')
@@ -9093,22 +9255,23 @@ if Open then
                                 ImGui.TableNextColumn() if ImGui.Button('Big Bank Bag') then mq.cmd('/lua run cbbankbag') end ImGui.SameLine() HelpMarker('Opens Big Bag (Requires cbbankbag.lua)')
                                 ImGui.TableNextColumn() if ImGui.Button('Ignore Mob') then mq.cmdf('/addignore "%s"',mq.TLO.Target.CleanName()) mq.cmd('/keypress esc') end ImGui.SameLine() HelpMarker('Adds targeted mob to ignore list.)')
                                 ImGui.TableNextColumn() if ImGui.Button('GearStatus') then mq.cmd('/lua run gearstatus') end ImGui.SameLine() HelpMarker('Inquire Toons Gear (Requires gearStatus.lua)')
-                                ImGui.TableNextColumn() if ImGui.Button('BandoGear') then mq.cmd('/lua run bandogear') end ImGui.SameLine() HelpMarker('Inquire Toons Gear (Requires bandogear.lua)')
-                                ImGui.TableNextColumn() if ImGui.Button('Make Crew') then mq.cmd('/lua run makecrew') end ImGui.SameLine() HelpMarker('Inquire Toons Gear (Requires makecrew.lua)')
+                                ImGui.TableNextColumn() if ImGui.Button('BandoGear') then mq.cmd('/lua run bandogear') end ImGui.SameLine() HelpMarker('Gear Switcher (Requires bandogear.lua)')
+                                ImGui.TableNextColumn() if ImGui.Button('Make Crew') then mq.cmd('/lua run makecrew') end ImGui.SameLine() HelpMarker('Make Groups (Requires makecrew.lua)')
                                 ImGui.TableNextColumn() if ImGui.Button('Switcher') then mq.cmd('/lua run switcher') end ImGui.SameLine() HelpMarker('Switch Toons (Requires switcher.lua)')
+                                ImGui.TableNextColumn() if ImGui.Button('GoToMyPlot') then mq.cmd('/lua run gotomyplot') end ImGui.SameLine() HelpMarker('Travel to Plot(Requires gotomyplot.lua)')
+                                ImGui.TableNextColumn() if ImGui.Button('Collection Plot') then mq.cmd('/lua run cch') end ImGui.SameLine() HelpMarker('Collection Manager(Requires cch.lua)')
+                                ImGui.TableNextColumn() if ImGui.Button('Housing Manager') then mq.cmd('/lua run housingmanager') end ImGui.SameLine() HelpMarker('House Manager(Requires housingmanager.lua)')
                                 ImGui.TableNextColumn() if ImGui.Button('Collection Gather') then mq.cmd('/mac collections gather') end ImGui.SameLine() HelpMarker('Gather Needed Collections To File(Requires Collections.mac)')
                                 ImGui.TableNextColumn() if ImGui.Button('Collection Bazaar') then mq.cmd('/mac collections bazaar') end ImGui.SameLine() HelpMarker('Buy Collections Bazaar(Requires Collections.mac)')
+                                ImGui.TableNextColumn() if ImGui.Button('Claim House') then mq.cmd('/mac claimhouse') end ImGui.SameLine() HelpMarker('Claim House Collections(Requires ClaimHouse.mac)')
                                 ImGui.EndTable()
-                                ImGui.EndTabItem()
-                                ImGui.PopStyleColor()
-                                ImGui.PopID()
                             end
-                            ImGui.EndTabBar()
                         end
-                    end
-                    ImGui.End()
-                end
+
+        ImGui.End()
+    end
 end
+
 local function help()
     print('\ag[\apEasy.lua\ag] \awby \agCannonballdex \at'..Version..'')
     print('\ar[\apEasy Help\ar]\ag /easy campfire \aw - Will drop a campfire if requirements are met')
@@ -9222,14 +9385,14 @@ local function Keep_DanNet_Loaded()
 end
 local function Check_Gamestate()
     if mq.TLO.MacroQuest.GameState() ~= 'INGAME' then
-        mq.cmd('/lua stop easylua')
+        mq.cmd('/lua stop easy')
     end
 end
-mq.imgui.init('CannonGUI', CannonGUI)
+mq.imgui.init('CannonballdexGUI', CannonballdexGUI)
 mq.bind('/easy', bind_easy)
 while Open do
     Keep_DanNet_Loaded()
-    Cannon()
+    Cannonballdex()
     mq.delay(500)
     UpdateTime()
     if settings_hud.oldZone ~= settings_hud.myZone() then
